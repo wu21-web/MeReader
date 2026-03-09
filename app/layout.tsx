@@ -14,6 +14,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Apply dark class before first paint to avoid flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.classList.add('dark')}}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className="antialiased">{children}</body>
     </html>
   );
