@@ -6,7 +6,6 @@ import remarkFrontmatter from "remark-frontmatter";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeHighlight from "rehype-highlight";
-import "highlight.js/styles/github.css";
 
 interface MarkdownPreviewProps {
   content: string;
