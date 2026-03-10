@@ -1,16 +1,17 @@
 @import "tailwindcss";
 @import "highlight.js/styles/github.css";
 
+/* Enable class-based dark mode for Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #24292f;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0d1117;
-    --foreground: #e6edf3;
-  }
+:root.dark {
+  --background: #0d1117;
+  --foreground: #e6edf3;
 }
 
 body {
@@ -142,20 +143,61 @@ body {
   vertical-align: middle;
 }
 
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-  .markdown-body h1,
-  .markdown-body h2 {
-    border-bottom-color: #30363d;
-  }
-  .markdown-body h6 { color: #8b949e; }
-  .markdown-body code { background: rgba(110, 118, 129, 0.4); }
-  .markdown-body pre { background: #161b22; }
-  .markdown-body blockquote { color: #8b949e; border-left-color: #30363d; }
-  .markdown-body th { background: #161b22; }
-  .markdown-body th,
-  .markdown-body td { border-color: #30363d; }
-  .markdown-body tr:nth-child(even) { background: #161b22; }
-  .markdown-body hr { border-top-color: #30363d; }
-  .markdown-body a { color: #58a6ff; }
+/* Dark mode adjustments via .dark class */
+:root.dark .markdown-body h1,
+:root.dark .markdown-body h2 {
+  border-bottom-color: #30363d;
 }
+:root.dark .markdown-body h6 { color: #8b949e; }
+:root.dark .markdown-body code { background: rgba(110, 118, 129, 0.4); }
+:root.dark .markdown-body pre { background: #161b22; }
+:root.dark .markdown-body blockquote { color: #8b949e; border-left-color: #30363d; }
+:root.dark .markdown-body th { background: #161b22; }
+:root.dark .markdown-body th,
+:root.dark .markdown-body td { border-color: #30363d; }
+:root.dark .markdown-body tr:nth-child(even) { background: #161b22; }
+:root.dark .markdown-body hr { border-top-color: #30363d; }
+:root.dark .markdown-body a { color: #58a6ff; }
+
+/* Dark mode syntax highlighting (GitHub Dark theme) */
+:root.dark .hljs { color: #c9d1d9; background: #0d1117; }
+:root.dark .hljs-doctag,
+:root.dark .hljs-keyword,
+:root.dark .hljs-meta .hljs-keyword,
+:root.dark .hljs-template-tag,
+:root.dark .hljs-template-variable,
+:root.dark .hljs-type,
+:root.dark .hljs-variable.language_ { color: #ff7b72; }
+:root.dark .hljs-title,
+:root.dark .hljs-title.class_,
+:root.dark .hljs-title.class_.inherited__,
+:root.dark .hljs-title.function_ { color: #d2a8ff; }
+:root.dark .hljs-attr,
+:root.dark .hljs-attribute,
+:root.dark .hljs-literal,
+:root.dark .hljs-meta,
+:root.dark .hljs-number,
+:root.dark .hljs-operator,
+:root.dark .hljs-variable,
+:root.dark .hljs-selector-attr,
+:root.dark .hljs-selector-class,
+:root.dark .hljs-selector-id { color: #79c0ff; }
+:root.dark .hljs-regexp,
+:root.dark .hljs-string,
+:root.dark .hljs-meta .hljs-string { color: #a5d6ff; }
+:root.dark .hljs-built_in,
+:root.dark .hljs-symbol { color: #ffa657; }
+:root.dark .hljs-comment,
+:root.dark .hljs-code,
+:root.dark .hljs-formula { color: #8b949e; }
+:root.dark .hljs-name,
+:root.dark .hljs-quote,
+:root.dark .hljs-selector-tag,
+:root.dark .hljs-selector-pseudo { color: #7ee787; }
+:root.dark .hljs-subst { color: #c9d1d9; }
+:root.dark .hljs-section { color: #1f6feb; font-weight: bold; }
+:root.dark .hljs-bullet { color: #f2cc60; }
+:root.dark .hljs-emphasis { color: #c9d1d9; font-style: italic; }
+:root.dark .hljs-strong { color: #c9d1d9; font-weight: bold; }
+:root.dark .hljs-addition { color: #aff5b4; background-color: #033a16; }
+:root.dark .hljs-deletion { color: #ffdcd7; background-color: #67060c; }
