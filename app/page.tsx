@@ -11,6 +11,20 @@ interface MarkdownTab {
   content: string;
 }
 
+function makeUniqueName(baseName: string, existingNames: Set<string>): string {
+  if (!existingNames.has(baseName)) {
+    return baseName;
+  }
+
+  let count = 2;
+  let candidate = `${baseName} (${count})`;
+  while (existingNames.has(candidate)) {
+    count += 1;
+    candidate = `${baseName} (${count})`;
+  }
+  return candidate;
+}
+
 export default function Home() {
   const [tabs, setTabs] = useState<MarkdownTab[]>([]);
   const [activeId, setActiveId] = useState<string>("");
@@ -53,27 +67,36 @@ export default function Home() {
 
   const handleFilesLoaded = useCallback(
     (files: { name: string; content: string }[]) => {
-      const newTabs: MarkdownTab[] = files.map((f, i) => ({
-        id: `${Date.now()}-${i}`,
-        name: f.name,
-        content: f.content,
-      }));
-
       setTabs((prev) => {
-        const combined = [...prev];
-        for (const t of newTabs) {
-          if (!combined.find((e) => e.name === t.name)) {
-            combined.push(t);
-          }
-        }
-        return combined;
-      });
+        const next = [...prev];
+        const existingNames = new Set(prev.map((t) => t.name));
+        let firstAddedId = "";
 
-      if (newTabs.length > 0) {
-        setActiveId((prev) => prev || newTabs[0].id);
-      }
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const uniqueName = makeUniqueName(file.name, existingNames);
+          existingNames.add(uniqueName);
+          const tabId = `${Date.now()}-${Math.random()}-${i}`;
+
+          if (!firstAddedId) {
+            firstAddedId = tabId;
+          }
+
+          next.push({
+            id: tabId,
+            name: uniqueName,
+            content: file.content,
+          });
+        }
+
+        if (!activeId && firstAddedId) {
+          setActiveId(firstAddedId);
+        }
+
+        return next;
+      });
     },
-    []
+    [activeId]
   );
 
   const handleAddFiles = useCallback(async (fileList: FileList) => {
