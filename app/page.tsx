@@ -200,7 +200,11 @@ export default function Home() {
               <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">
                 .md
               </code>{" "}
-              files to preview them with GitHub-style rendering.
+              files or a single{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">
+                .md
+              </code>{" "}
+              file to preview with GitHub-style rendering.
             </p>
             <UploadZone onFilesLoaded={handleFilesLoaded} />
             <p className="text-xs text-gray-400 text-center mt-4">
