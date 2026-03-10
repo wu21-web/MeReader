@@ -141,19 +141,58 @@ export default function Home() {
     setExporting(true);
     setExportError(null);
     try {
-      const html = previewRef.current.innerHTML;
+      const markdownNode = previewRef.current.querySelector(".markdown-body");
+      if (!(markdownNode instanceof HTMLElement)) {
+        setExportError("Unable to export: active markdown preview not found");
+        return;
+      }
+
+      const html = markdownNode.innerHTML;
       const res = await fetch("/api/export-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           html,
+          filePath: activeTab.name,
           title: activeTab.name,
         }),
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        setExportError(data.error ?? "PDF export failed");
+        const contentType = res.headers.get("content-type") || "";
+        let message = "PDF export failed";
+
+        const text = await res.text();
+        const looksJson =
+          contentType.includes("application/json") || text.trim().startsWith("{");
+
+        if (looksJson) {
+          try {
+            const data = JSON.parse(text) as { error?: string };
+            message = data.error ?? message;
+          } catch {
+            message = text.trim().startsWith("<")
+              ? "PDF export failed on server"
+              : text.slice(0, 240) || message;
+          }
+        } else {
+          // If server returned an HTML error page, avoid dumping markup to the UI.
+          message = text.trim().startsWith("<")
+            ? "PDF export failed on server"
+            : text.slice(0, 240) || message;
+        }
+
+        setExportError(message);
+        return;
+      }
+
+      const okContentType = res.headers.get("content-type") || "";
+      if (!okContentType.includes("application/pdf")) {
+        const text = await res.text();
+        const message = text.trim().startsWith("<")
+          ? "PDF export failed on server"
+          : text.slice(0, 240) || "PDF export failed";
+        setExportError(message);
         return;
       }
 

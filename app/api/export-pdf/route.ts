@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { safeSessionPath } from "@/lib/cleanup";
 
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -15,6 +17,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "html is required" }, { status: 400 });
     }
 
+    if (!filePath || !filePath.toLowerCase().endsWith(".md")) {
+      return NextResponse.json(
+        { error: "filePath must be the active .md tab" },
+        { status: 400 }
+      );
+    }
+
     // Validate session if provided
     if (sessionId && filePath) {
       const resolved = safeSessionPath(sessionId, filePath);
@@ -23,12 +32,39 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const fullHtml = buildHtmlPage(html, title ?? "MeReader Export");
+    const exportTitle = title ?? filePath.replace(/^.*[\\/]/, "");
+    const fullHtml = buildHtmlPage(html, exportTitle);
 
     // Try Playwright first (best fidelity)
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { chromium } = require("playwright") as typeof import("playwright");
+      const playwright = require("playwright") as {
+        chromium?: {
+          launch: (options: { headless: boolean }) => Promise<{
+            newPage: () => Promise<{
+              setContent: (
+                html: string,
+                options: { waitUntil: "networkidle" }
+              ) => Promise<void>;
+              pdf: (options: {
+                format: "A4";
+                printBackground: boolean;
+                margin: {
+                  top: string;
+                  bottom: string;
+                  left: string;
+                  right: string;
+                };
+              }) => Promise<Uint8Array>;
+            }>;
+            close: () => Promise<void>;
+          }>;
+        };
+      };
+      const { chromium } = playwright;
+      if (!chromium) {
+        throw new Error("Playwright chromium runtime is unavailable");
+      }
       const browser = await chromium.launch({ headless: true });
       const page = await browser.newPage();
 
@@ -47,7 +83,7 @@ export async function POST(req: NextRequest) {
         headers: {
           "Content-Type": "application/pdf",
           "Content-Disposition": `attachment; filename="${encodeURIComponent(
-            title ?? "export"
+            exportTitle
           )}.pdf"`,
         },
       });
