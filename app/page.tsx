@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import UploadZone from "@/components/UploadZone";
 import TabBar from "@/components/TabBar";
 import MarkdownPreview from "@/components/MarkdownPreview";
@@ -16,38 +16,7 @@ export default function Home() {
   const [activeId, setActiveId] = useState<string>("");
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
-  const [isDark, setIsDark] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
-
-  // Sync dark mode state with system preference and apply class to <html>
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    // Read current preference; the inline script may have already set the class
-    const prefersDark = document.documentElement.classList.contains("dark") || mq.matches;
-    setIsDark(prefersDark);
-
-    const handler = (e: MediaQueryListEvent) => {
-      // Only follow system if not manually overridden
-      if (!document.documentElement.dataset.themeOverride) {
-        setIsDark(e.matches);
-      }
-    };
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDark);
-    document.documentElement.classList.toggle("light", !isDark);
-  }, [isDark]);
-
-  const toggleDark = () => {
-    setIsDark((prev) => {
-      // Mark as manually overridden so system changes don't override it
-      document.documentElement.dataset.themeOverride = "true";
-      return !prev;
-    });
-  };
 
   const handleFilesLoaded = useCallback(
     (files: { name: string; content: string }[]) => {
@@ -145,91 +114,66 @@ export default function Home() {
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Dark mode toggle – always visible */}
-          <button
-            onClick={toggleDark}
-            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            className="flex items-center justify-center w-8 h-8 text-gray-300 hover:text-white rounded transition-colors"
-          >
-            {isDark ? (
-              /* Sun icon – click to go light */
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"
-                />
-              </svg>
-            ) : (
-              /* Moon icon – click to go dark */
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"
-                />
-              </svg>
-            )}
-          </button>
-
-          {tabs.length > 0 && (
-            <>
-              <button
-                onClick={handleExportPdf}
-                disabled={!activeTab || exporting}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded transition-colors"
-              >
-                {exporting ? (
-                  <>
-                    <svg
-                      className="w-4 h-4 animate-spin"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v8H4z"
-                      />
-                    </svg>
-                    Exporting…
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
+        {tabs.length > 0 && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportPdf}
+              disabled={!activeTab || exporting}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded transition-colors"
+            >
+              {exporting ? (
+                <>
+                  <svg
+                    className="w-4 h-4 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
                       stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                    Export PDF
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  setTabs([]);
-                  setActiveId("");
-                }}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors"
-              >
-                Close All
-              </button>
-            </>
-          )}
-        </div>
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    />
+                  </svg>
+                  Exporting…
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                  Export PDF
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setTabs([]);
+                setActiveId("");
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors"
+            >
+              Close All
+            </button>
+          </div>
+        )}
       </header>
 
       {exportError && (
