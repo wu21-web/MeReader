@@ -18,6 +18,8 @@ export default function Home() {
   const [exportError, setExportError] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+  const addFolderInputRef = useRef<HTMLInputElement>(null);
+  const addFileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync dark mode state with system preference and apply class to <html>
   useEffect(() => {
@@ -74,6 +76,25 @@ export default function Home() {
     []
   );
 
+  const handleAddFiles = useCallback(async (fileList: FileList) => {
+    const mdFiles: { name: string; content: string }[] = [];
+
+    for (const file of Array.from(fileList)) {
+      const rel: string =
+        (file as File & { webkitRelativePath?: string }).webkitRelativePath ||
+        file.name;
+
+      if (!rel.toLowerCase().endsWith(".md")) continue;
+
+      const content = await file.text();
+      mdFiles.push({ name: rel, content });
+    }
+
+    if (mdFiles.length > 0) {
+      handleFilesLoaded(mdFiles);
+    }
+  }, [handleFilesLoaded]);
+
   const closeTab = useCallback(
     (id: string) => {
       setTabs((prev) => {
@@ -129,6 +150,31 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-gray-900">
+      <input
+        ref={addFolderInputRef}
+        type="file"
+        // @ts-expect-error - webkitdirectory is non-standard HTML attribute
+        webkitdirectory=""
+        directory=""
+        multiple
+        accept=".md"
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files) handleAddFiles(e.target.files);
+          e.currentTarget.value = "";
+        }}
+      />
+      <input
+        ref={addFileInputRef}
+        type="file"
+        accept=".md"
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files) handleAddFiles(e.target.files);
+          e.currentTarget.value = "";
+        }}
+      />
+
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-800">
         <div className="flex items-center gap-2">
@@ -277,6 +323,8 @@ export default function Home() {
             activeId={activeId}
             onSelect={setActiveId}
             onClose={closeTab}
+            onAddFolder={() => addFolderInputRef.current?.click()}
+            onAddFile={() => addFileInputRef.current?.click()}
           />
           <div className="flex-1 overflow-y-auto">
             <div
