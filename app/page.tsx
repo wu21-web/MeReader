@@ -28,6 +28,8 @@ function makeUniqueName(baseName: string, existingNames: Set<string>): string {
 export default function Home() {
   const [tabs, setTabs] = useState<MarkdownTab[]>([]);
   const [activeId, setActiveId] = useState<string>("");
+  const [batchMenuOpen, setBatchMenuOpen] = useState(false);
+  const [batchSelection, setBatchSelection] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
@@ -133,81 +135,177 @@ export default function Home() {
     [activeId]
   );
 
+  const closeTabs = useCallback((ids: string[]) => {
+    if (ids.length === 0) return;
+
+    const closeSet = new Set(ids);
+    setTabs((prev) => {
+      const next = prev.filter((t) => !closeSet.has(t.id));
+
+      if (next.length === 0) {
+        setActiveId("");
+      } else if (closeSet.has(activeId) || !next.some((t) => t.id === activeId)) {
+        setActiveId(next[0].id);
+      }
+
+      return next;
+    });
+
+    setBatchSelection((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+  }, [activeId]);
+
   const activeTab = tabs.find((t) => t.id === activeId);
+  const markdownTabs = tabs.filter((t) => t.name.toLowerCase().endsWith(".md"));
+  const selectedMarkdownTabs = markdownTabs.filter((t) => batchSelection.has(t.id));
+
+  // Keep batch selection valid as tabs are opened/closed.
+  useEffect(() => {
+    const validIds = new Set(tabs.map((t) => t.id));
+    setBatchSelection((prev) => {
+      const next = new Set<string>();
+      prev.forEach((id) => {
+        if (validIds.has(id)) next.add(id);
+      });
+      return next.size === prev.size ? prev : next;
+    });
+  }, [tabs]);
+
+  const toggleBatchTabSelection = useCallback((id: string) => {
+    setBatchSelection((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const selectAllMarkdownTabs = useCallback(() => {
+    setBatchSelection(new Set(markdownTabs.map((t) => t.id)));
+  }, [markdownTabs]);
+
+  const clearBatchSelection = useCallback(() => {
+    setBatchSelection(new Set());
+  }, []);
+
+  const waitForPreviewPaint = useCallback(async () => {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+  }, []);
+
+  const exportTabToPdf = useCallback(async (tab: MarkdownTab) => {
+    const markdownNode = previewRef.current?.querySelector(".markdown-body");
+    if (!(markdownNode instanceof HTMLElement)) {
+      throw new Error("Unable to export: markdown preview not found");
+    }
+
+    const html = markdownNode.innerHTML;
+    const res = await fetch("/api/export-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        html,
+        filePath: tab.name,
+        title: tab.name,
+      }),
+    });
+
+    if (!res.ok) {
+      const contentType = res.headers.get("content-type") || "";
+      let message = "PDF export failed";
+
+      const text = await res.text();
+      const looksJson =
+        contentType.includes("application/json") || text.trim().startsWith("{");
+
+      if (looksJson) {
+        try {
+          const data = JSON.parse(text) as { error?: string };
+          message = data.error ?? message;
+        } catch {
+          message = text.trim().startsWith("<")
+            ? "PDF export failed on server"
+            : text.slice(0, 240) || message;
+        }
+      } else {
+        message = text.trim().startsWith("<")
+          ? "PDF export failed on server"
+          : text.slice(0, 240) || message;
+      }
+
+      throw new Error(message);
+    }
+
+    const okContentType = res.headers.get("content-type") || "";
+    if (!okContentType.includes("application/pdf")) {
+      const text = await res.text();
+      const message = text.trim().startsWith("<")
+        ? "PDF export failed on server"
+        : text.slice(0, 240) || "PDF export failed";
+      throw new Error(message);
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${tab.name.replace(/[/\\]/g, "_")}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
 
   const handleExportPdf = async () => {
     if (!activeTab || !previewRef.current) return;
     setExporting(true);
     setExportError(null);
     try {
-      const markdownNode = previewRef.current.querySelector(".markdown-body");
-      if (!(markdownNode instanceof HTMLElement)) {
-        setExportError("Unable to export: active markdown preview not found");
-        return;
-      }
-
-      const html = markdownNode.innerHTML;
-      const res = await fetch("/api/export-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          html,
-          filePath: activeTab.name,
-          title: activeTab.name,
-        }),
-      });
-
-      if (!res.ok) {
-        const contentType = res.headers.get("content-type") || "";
-        let message = "PDF export failed";
-
-        const text = await res.text();
-        const looksJson =
-          contentType.includes("application/json") || text.trim().startsWith("{");
-
-        if (looksJson) {
-          try {
-            const data = JSON.parse(text) as { error?: string };
-            message = data.error ?? message;
-          } catch {
-            message = text.trim().startsWith("<")
-              ? "PDF export failed on server"
-              : text.slice(0, 240) || message;
-          }
-        } else {
-          // If server returned an HTML error page, avoid dumping markup to the UI.
-          message = text.trim().startsWith("<")
-            ? "PDF export failed on server"
-            : text.slice(0, 240) || message;
-        }
-
-        setExportError(message);
-        return;
-      }
-
-      const okContentType = res.headers.get("content-type") || "";
-      if (!okContentType.includes("application/pdf")) {
-        const text = await res.text();
-        const message = text.trim().startsWith("<")
-          ? "PDF export failed on server"
-          : text.slice(0, 240) || "PDF export failed";
-        setExportError(message);
-        return;
-      }
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${activeTab.name.replace(/[/\\]/g, "_")}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      await exportTabToPdf(activeTab);
     } catch (err) {
       setExportError(String(err));
     } finally {
       setExporting(false);
     }
   };
+
+  const handleBatchExportPdf = useCallback(async () => {
+    if (selectedMarkdownTabs.length === 0) return;
+
+    setExporting(true);
+    setExportError(null);
+
+    const prevActiveId = activeId;
+
+    try {
+      for (const tab of selectedMarkdownTabs) {
+        if (activeId !== tab.id) {
+          setActiveId(tab.id);
+          await waitForPreviewPaint();
+        }
+        await exportTabToPdf(tab);
+      }
+    } catch (err) {
+      setExportError(String(err));
+    } finally {
+      if (prevActiveId) {
+        setActiveId(prevActiveId);
+      }
+      setExporting(false);
+    }
+  }, [activeId, exportTabToPdf, selectedMarkdownTabs, waitForPreviewPaint]);
+
+  const handleBatchClose = useCallback(() => {
+    closeTabs(selectedMarkdownTabs.map((t) => t.id));
+  }, [closeTabs, selectedMarkdownTabs]);
 
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-gray-900">
@@ -378,30 +476,132 @@ export default function Home() {
         </main>
       ) : (
         /* Tab + preview screen */
-        <div className="flex flex-col flex-1 overflow-hidden">
-          <TabBar
-            tabs={tabs}
-            activeId={activeId}
-            onSelect={setActiveId}
-            onClose={closeTab}
-            onAddFolder={() => addFolderInputRef.current?.click()}
-            onAddFile={() => addFileInputRef.current?.click()}
-          />
-          <div className="flex-1 overflow-y-auto">
-            <div
-              ref={previewRef}
-              className="max-w-4xl mx-auto px-6 py-8"
+        <div className="flex flex-1 overflow-hidden">
+          <aside className="w-72 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-3 overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => setBatchMenuOpen((prev) => !prev)}
+              className="w-full flex items-center justify-between rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
-              {activeTab ? (
-                <MarkdownPreview
-                  key={activeTab.id}
-                  content={activeTab.content}
+              <span>Batch Process</span>
+              <svg
+                className={`w-4 h-4 transition-transform ${batchMenuOpen ? "rotate-180" : ""}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
                 />
-              ) : (
-                <p className="text-gray-400 text-center mt-16">
-                  Select a tab to preview
-                </p>
-              )}
+              </svg>
+            </button>
+
+            {batchMenuOpen && (
+              <div className="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Open Markdown Files
+                  </p>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {selectedMarkdownTabs.length}/{markdownTabs.length} selected
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={selectAllMarkdownTabs}
+                    disabled={markdownTabs.length === 0}
+                    className="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-100 disabled:opacity-50"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearBatchSelection}
+                    disabled={selectedMarkdownTabs.length === 0}
+                    className="px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-100 disabled:opacity-50"
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
+                  {markdownTabs.length === 0 ? (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      No .md files are currently open.
+                    </p>
+                  ) : (
+                    markdownTabs.map((tab) => {
+                      const shortName = tab.name.split(/[\\/]/).pop() ?? tab.name;
+                      return (
+                        <label
+                          key={tab.id}
+                          className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 rounded px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                          title={tab.name}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={batchSelection.has(tab.id)}
+                            onChange={() => toggleBatchTabSelection(tab.id)}
+                          />
+                          <span className="truncate">{shortName}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+
+                <div className="mt-3 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={handleBatchExportPdf}
+                    disabled={selectedMarkdownTabs.length === 0 || exporting}
+                    className="w-full px-3 py-2 text-sm rounded bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400"
+                  >
+                    {exporting ? "Exporting..." : "Export Selected PDFs"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBatchClose}
+                    disabled={selectedMarkdownTabs.length === 0 || exporting}
+                    className="w-full px-3 py-2 text-sm rounded bg-gray-600 hover:bg-gray-500 text-white disabled:bg-gray-400"
+                  >
+                    Close Selected
+                  </button>
+                </div>
+              </div>
+            )}
+          </aside>
+
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <TabBar
+              tabs={tabs}
+              activeId={activeId}
+              onSelect={setActiveId}
+              onClose={closeTab}
+              onAddFolder={() => addFolderInputRef.current?.click()}
+              onAddFile={() => addFileInputRef.current?.click()}
+            />
+            <div className="flex-1 overflow-y-auto">
+              <div
+                ref={previewRef}
+                className="max-w-4xl mx-auto px-6 py-8"
+              >
+                {activeTab ? (
+                  <MarkdownPreview
+                    key={activeTab.id}
+                    content={activeTab.content}
+                  />
+                ) : (
+                  <p className="text-gray-400 text-center mt-16">
+                    Select a tab to preview
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
