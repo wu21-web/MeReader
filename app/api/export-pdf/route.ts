@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { safeSessionPath } from "@/lib/cleanup";
 
 export const runtime = "nodejs";
+// Allow up to 60 s on Vercel Pro; free tier is capped at 10 s.
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,46 +27,34 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Derive a clean title: use explicit title, or strip folder prefix from filePath, or fall back
+    // Derive a clean title: strip folder prefix and .md extension
     const exportTitle = title
       ? title.replace(/^.*[\/]/, "").replace(/\.md(\s.*)?$/i, "") || title
       : "MeReader Export";
     const fullHtml = buildHtmlPage(html, exportTitle);
 
-    // Try Playwright first (best fidelity)
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const playwright = require("playwright") as {
-        chromium?: {
-          launch: (options: { headless: boolean }) => Promise<{
-            newPage: () => Promise<{
-              setContent: (
-                html: string,
-                options: { waitUntil: "networkidle" }
-              ) => Promise<void>;
-              pdf: (options: {
-                format: "A4";
-                printBackground: boolean;
-                margin: {
-                  top: string;
-                  bottom: string;
-                  left: string;
-                  right: string;
-                };
-              }) => Promise<Uint8Array>;
-            }>;
-            close: () => Promise<void>;
-          }>;
-        };
-      };
-      const { chromium } = playwright;
-      if (!chromium) {
-        throw new Error("Playwright chromium runtime is unavailable");
-      }
-      const browser = await chromium.launch({ headless: true });
-      const page = await browser.newPage();
+      // Dynamic imports keep these large packages out of the client bundle and
+      // allow Next.js / Vercel to treat them as server-only externals.
+      const [chromiumMod, puppeteerMod] = await Promise.all([
+        import("@sparticuz/chromium"),
+        import("puppeteer-core"),
+      ]);
+      const chromium = chromiumMod.default;
+      const puppeteer = puppeteerMod.default;
 
-      await page.setContent(fullHtml, { waitUntil: "networkidle" });
+      // Disable GPU/graphics stack — not needed for PDF, saves resources.
+      chromium.setGraphicsMode = false;
+
+      const browser = await puppeteer.launch({
+        args: chromium.args,
+        defaultViewport: { width: 1280, height: 800 },
+        executablePath: await chromium.executablePath(),
+        headless: true,
+      });
+
+      const page = await browser.newPage();
+      await page.setContent(fullHtml, { waitUntil: "networkidle0" });
 
       const pdfBuffer = await page.pdf({
         format: "A4",
@@ -74,8 +64,8 @@ export async function POST(req: NextRequest) {
 
       await browser.close();
 
-      // Buffer.from copies pdfBuffer into a Node.js Buffer backed by a plain
-      // ArrayBuffer (not the shared pool), satisfying Blob's strict BlobPart type.
+      // Buffer.from copies into a Node.js Buffer backed by a plain ArrayBuffer,
+      // which Blob / NextResponse accept as BodyInit without type errors.
       const pdfBlob = new Blob([Buffer.from(pdfBuffer)], {
         type: "application/pdf",
       });
@@ -89,12 +79,10 @@ export async function POST(req: NextRequest) {
           )}.pdf"`,
         },
       });
-    } catch {
+    } catch (err) {
+      console.error("Chromium/puppeteer error:", err);
       return NextResponse.json(
-        {
-          error:
-            "PDF generation requires Playwright. Run: npx playwright install chromium",
-        },
+        { error: "PDF generation failed. Please try again." },
         { status: 503 }
       );
     }

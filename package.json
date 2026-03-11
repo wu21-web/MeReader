@@ -9,10 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^143.0.4",
     "highlight.js": "^11.11.1",
     "multer": "^2.1.1",
     "next": "16.1.6",
     "node-cron": "^4.2.1",
+    "puppeteer-core": "^24.39.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
@@ -35,8 +37,5 @@
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
     "typescript": "^5"
-  },
-  "optionalDependencies": {
-    "playwright": "^1.58.2"
   }
 }
