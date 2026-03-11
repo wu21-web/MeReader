@@ -277,6 +277,81 @@ export default function Home() {
     }
   };
 
+  const exportTabToPngPages = useCallback(async (tab: MarkdownTab) => {
+    const markdownNode = previewRef.current?.querySelector(".markdown-body");
+    if (!(markdownNode instanceof HTMLElement)) {
+      throw new Error("Unable to export: markdown preview not found");
+    }
+
+    const html = markdownNode.innerHTML;
+    const res = await fetch("/api/export-png-pages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        html,
+        filePath: tab.name,
+        title: tab.name,
+      }),
+    });
+
+    if (!res.ok) {
+      const contentType = res.headers.get("content-type") || "";
+      let message = "PNG export failed";
+
+      const text = await res.text();
+      const looksJson =
+        contentType.includes("application/json") || text.trim().startsWith("{");
+
+      if (looksJson) {
+        try {
+          const data = JSON.parse(text) as { error?: string };
+          message = data.error ?? message;
+        } catch {
+          message = text.trim().startsWith("<")
+            ? "PNG export failed on server"
+            : text.slice(0, 240) || message;
+        }
+      } else {
+        message = text.trim().startsWith("<")
+          ? "PNG export failed on server"
+          : text.slice(0, 240) || message;
+      }
+
+      throw new Error(message);
+    }
+
+    const okContentType = res.headers.get("content-type") || "";
+    if (!okContentType.includes("application/zip")) {
+      const text = await res.text();
+      const message = text.trim().startsWith("<")
+        ? "PNG export failed on server"
+        : text.slice(0, 240) || "PNG export failed";
+      throw new Error(message);
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const base = tab.name.replace(/^.*[\\/]/, "").replace(/\.md$/i, "") || "export";
+    a.download = `${base}_png_pages.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const handleExportPngPages = async () => {
+    if (!activeTab || !previewRef.current) return;
+    setExporting(true);
+    setExportError(null);
+    try {
+      await exportTabToPngPages(activeTab);
+    } catch (err) {
+      setExportError(String(err));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleBatchExportPdf = useCallback(async () => {
     if (selectedMarkdownTabs.length === 0) return;
 
@@ -287,10 +362,8 @@ export default function Home() {
 
     try {
       for (const tab of selectedMarkdownTabs) {
-        if (activeId !== tab.id) {
-          setActiveId(tab.id);
-          await waitForPreviewPaint();
-        }
+        setActiveId(tab.id);
+        await waitForPreviewPaint();
         await exportTabToPdf(tab);
       }
     } catch (err) {
@@ -302,6 +375,30 @@ export default function Home() {
       setExporting(false);
     }
   }, [activeId, exportTabToPdf, selectedMarkdownTabs, waitForPreviewPaint]);
+
+  const handleBatchExportPngPages = useCallback(async () => {
+    if (selectedMarkdownTabs.length === 0) return;
+
+    setExporting(true);
+    setExportError(null);
+
+    const prevActiveId = activeId;
+
+    try {
+      for (const tab of selectedMarkdownTabs) {
+        setActiveId(tab.id);
+        await waitForPreviewPaint();
+        await exportTabToPngPages(tab);
+      }
+    } catch (err) {
+      setExportError(String(err));
+    } finally {
+      if (prevActiveId) {
+        setActiveId(prevActiveId);
+      }
+      setExporting(false);
+    }
+  }, [activeId, exportTabToPngPages, selectedMarkdownTabs, waitForPreviewPaint]);
 
   const handleBatchClose = useCallback(() => {
     closeTabs(selectedMarkdownTabs.map((t) => t.id));
@@ -422,6 +519,13 @@ export default function Home() {
                     Export PDF
                   </>
                 )}
+              </button>
+              <button
+                onClick={handleExportPngPages}
+                disabled={!activeTab || exporting}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded transition-colors"
+              >
+                Export PNG Pages
               </button>
               <button
                 onClick={() => {
@@ -563,6 +667,14 @@ export default function Home() {
                     className="w-full px-3 py-2 text-sm rounded bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400"
                   >
                     {exporting ? "Exporting..." : "Export Selected PDFs"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBatchExportPngPages}
+                    disabled={selectedMarkdownTabs.length === 0 || exporting}
+                    className="w-full px-3 py-2 text-sm rounded bg-emerald-600 hover:bg-emerald-700 text-white disabled:bg-emerald-400"
+                  >
+                    {exporting ? "Exporting..." : "Export Selected PNG Pages"}
                   </button>
                   <button
                     type="button"
