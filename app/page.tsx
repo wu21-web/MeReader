@@ -65,22 +65,25 @@ export default function Home() {
     });
   };
 
+  // Auto-select the first tab whenever tabs exist but nothing is active.
+  // This handles both initial load and edge cases where activeId becomes stale.
+  useEffect(() => {
+    if (!activeId && tabs.length > 0) {
+      setActiveId(tabs[0].id);
+    }
+  }, [tabs, activeId]);
+
   const handleFilesLoaded = useCallback(
     (files: { name: string; content: string }[]) => {
       setTabs((prev) => {
         const next = [...prev];
         const existingNames = new Set(prev.map((t) => t.name));
-        let firstAddedId = "";
 
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
           const uniqueName = makeUniqueName(file.name, existingNames);
           existingNames.add(uniqueName);
           const tabId = `${Date.now()}-${Math.random()}-${i}`;
-
-          if (!firstAddedId) {
-            firstAddedId = tabId;
-          }
 
           next.push({
             id: tabId,
@@ -89,14 +92,10 @@ export default function Home() {
           });
         }
 
-        if (!activeId && firstAddedId) {
-          setActiveId(firstAddedId);
-        }
-
         return next;
       });
     },
-    [activeId]
+    []
   );
 
   const handleAddFiles = useCallback(async (fileList: FileList) => {
