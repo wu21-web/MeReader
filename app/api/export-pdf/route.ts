@@ -74,16 +74,13 @@ export async function POST(req: NextRequest) {
 
       await browser.close();
 
-      // Use Buffer.from to get a correctly-sliced copy — pdfBuffer.buffer may be
-      // a shared Node.js pool ArrayBuffer with a non-zero byteOffset, which would
-      // corrupt the response if passed directly.
-      const safeBuffer = Buffer.from(
-        pdfBuffer.buffer,
-        pdfBuffer.byteOffset,
-        pdfBuffer.byteLength
-      );
+      // Buffer.from copies pdfBuffer into a Node.js Buffer backed by a plain
+      // ArrayBuffer (not the shared pool), satisfying Blob's strict BlobPart type.
+      const pdfBlob = new Blob([Buffer.from(pdfBuffer)], {
+        type: "application/pdf",
+      });
 
-      return new NextResponse(safeBuffer, {
+      return new NextResponse(pdfBlob, {
         status: 200,
         headers: {
           "Content-Type": "application/pdf",
