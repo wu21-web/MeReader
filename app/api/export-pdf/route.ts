@@ -17,14 +17,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "html is required" }, { status: 400 });
     }
 
-    if (!filePath || !filePath.toLowerCase().endsWith(".md")) {
-      return NextResponse.json(
-        { error: "filePath must be the active .md tab" },
-        { status: 400 }
-      );
-    }
-
-    // Validate session if provided
+    // Validate session path only when a sessionId + filePath pair is explicitly provided
     if (sessionId && filePath) {
       const resolved = safeSessionPath(sessionId, filePath);
       if (!resolved) {
@@ -32,7 +25,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const exportTitle = title ?? filePath.replace(/^.*[\\/]/, "");
+    // Derive a clean title: use explicit title, or strip folder prefix from filePath, or fall back
+    const exportTitle = title
+      ? title.replace(/^.*[\/]/, "").replace(/\.md(\s.*)?$/i, "") || title
+      : "MeReader Export";
     const fullHtml = buildHtmlPage(html, exportTitle);
 
     // Try Playwright first (best fidelity)
@@ -78,7 +74,16 @@ export async function POST(req: NextRequest) {
 
       await browser.close();
 
-      return new NextResponse(pdfBuffer.buffer as ArrayBuffer, {
+      // Use Buffer.from to get a correctly-sliced copy — pdfBuffer.buffer may be
+      // a shared Node.js pool ArrayBuffer with a non-zero byteOffset, which would
+      // corrupt the response if passed directly.
+      const safeBuffer = Buffer.from(
+        pdfBuffer.buffer,
+        pdfBuffer.byteOffset,
+        pdfBuffer.byteLength
+      );
+
+      return new NextResponse(safeBuffer, {
         status: 200,
         headers: {
           "Content-Type": "application/pdf",
