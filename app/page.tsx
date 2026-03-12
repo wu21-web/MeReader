@@ -28,12 +28,15 @@ function makeUniqueName(baseName: string, existingNames: Set<string>): string {
 export default function Home() {
   const [tabs, setTabs] = useState<MarkdownTab[]>([]);
   const [activeId, setActiveId] = useState<string>("");
-  const [batchMenuOpen, setBatchMenuOpen] = useState(false);
+  const [batchSidebarOpen, setBatchSidebarOpen] = useState(false);
+  const [batchSidebarWidth, setBatchSidebarWidth] = useState(288);
+  const [resizingBatchSidebar, setResizingBatchSidebar] = useState(false);
   const [batchSelection, setBatchSelection] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+  const batchResizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const addFolderInputRef = useRef<HTMLInputElement>(null);
   const addFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -404,6 +407,53 @@ export default function Home() {
     closeTabs(selectedMarkdownTabs.map((t) => t.id));
   }, [closeTabs, selectedMarkdownTabs]);
 
+  const startBatchSidebarResize = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      batchResizeStateRef.current = {
+        startX: e.clientX,
+        startWidth: batchSidebarWidth,
+      };
+      setResizingBatchSidebar(true);
+    },
+    [batchSidebarWidth]
+  );
+
+  useEffect(() => {
+    if (!resizingBatchSidebar) return;
+
+    const onMouseMove = (e: MouseEvent) => {
+      const dragState = batchResizeStateRef.current;
+      if (!dragState) return;
+
+      const delta = e.clientX - dragState.startX;
+      const raw = dragState.startWidth + delta;
+      const minWidth = 220;
+      const maxWidth = Math.max(260, Math.min(640, window.innerWidth - 320));
+      const nextWidth = Math.min(maxWidth, Math.max(minWidth, raw));
+      setBatchSidebarWidth(nextWidth);
+    };
+
+    const onMouseUp = () => {
+      setResizingBatchSidebar(false);
+      batchResizeStateRef.current = null;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [resizingBatchSidebar]);
+
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-gray-900">
       <input
@@ -580,16 +630,15 @@ export default function Home() {
         </main>
       ) : (
         /* Tab + preview screen */
-        <div className="flex flex-1 overflow-hidden">
-          <aside className="w-72 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-3 overflow-y-auto">
+        <div className="flex flex-1 overflow-hidden relative">
+          {!batchSidebarOpen && (
             <button
               type="button"
-              onClick={() => setBatchMenuOpen((prev) => !prev)}
-              className="w-full flex items-center justify-between rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => setBatchSidebarOpen(true)}
+              className="absolute left-3 top-3 z-20 inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white/95 dark:bg-gray-800/95 backdrop-blur px-3 py-2 text-sm font-medium text-gray-800 dark:text-gray-100 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
-              <span>Batch Process</span>
               <svg
-                className={`w-4 h-4 transition-transform ${batchMenuOpen ? "rotate-180" : ""}`}
+                className="w-4 h-4"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -598,13 +647,33 @@ export default function Home() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
+                  d="M4 6h16M4 12h16M4 18h16"
                 />
               </svg>
+              Batch Process
             </button>
+          )}
 
-            {batchMenuOpen && (
-              <div className="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
+          {batchSidebarOpen && (
+            <aside
+              className="relative shrink-0 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-3 overflow-y-auto"
+              style={{ width: `${batchSidebarWidth}px` }}
+            >
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Batch Process
+                </p>
+                <button
+                  type="button"
+                  aria-label="Collapse batch sidebar"
+                  onClick={() => setBatchSidebarOpen(false)}
+                  className="rounded px-2 py-1 text-xs text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Hide
+                </button>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     Open Markdown Files
@@ -686,8 +755,16 @@ export default function Home() {
                   </button>
                 </div>
               </div>
-            )}
-          </aside>
+
+              <div
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize batch sidebar"
+                onMouseDown={startBatchSidebarResize}
+                className="absolute top-0 right-0 h-full w-1 cursor-col-resize hover:bg-blue-400/60"
+              />
+            </aside>
+          )}
 
           <div className="flex flex-col flex-1 overflow-hidden">
             <TabBar
