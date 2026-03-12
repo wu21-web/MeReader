@@ -26,7 +26,7 @@ Upload a local folder of `.md` files and preview them instantly with 1:1 GitHub 
 | Framework | [Next.js 16](https://nextjs.org/) (App Router, TypeScript) |
 | Styling | [Tailwind CSS v4](https://tailwindcss.com/) + GitHub Primer-inspired markdown CSS |
 | Markdown | `react-markdown`, `remark-gfm`, `remark-frontmatter`, `rehype-raw`, `rehype-sanitize`, `rehype-highlight` |
-| PDF | [Playwright](https://playwright.dev/) (Chromium headless) |
+| PDF/PNG Rendering | `puppeteer-core` + `@sparticuz/chromium` |
 | Cleanup | `node-cron` — hourly sweep of sessions older than 24 h |
 
 ## Getting Started
@@ -58,7 +58,69 @@ npm start
 | `POST` | `/api/upload` | Upload folder files (multipart/form-data: `files[]` + `paths[]`) |
 | `GET` | `/api/list-files?sessionId=<id>` | List `.md` files in a session |
 | `GET` | `/api/file-content?sessionId=<id>&path=<rel>` | Fetch file contents |
-| `POST` | `/api/export-pdf` | Convert rendered HTML to PDF (requires Playwright) |
+| `POST` | `/api/export-pdf` | Convert rendered HTML to PDF |
+| `POST` | `/api/export-png-pages` | Convert rendered HTML to a ZIP of page-sliced PNGs |
+| `POST` | `/api/convert-md` | Upload one `.md` file and export directly to PDF or PNG |
+
+### `POST /api/convert-md`
+
+Upload a single markdown file and export in one request. This route is designed for browser clients, `curl`, Python scripts, CI jobs, and other HTTP clients.
+
+Request (`multipart/form-data`):
+
+- `file` (required): one `.md` file, max 5 MB
+- `format` (required): `pdf` or `png`
+- `pngMode` (optional): `pages` (default, returns `.zip`) or `single` (returns one `.png`)
+
+Response content types:
+
+- `format=pdf` -> `application/pdf`
+- `format=png&pngMode=pages` -> `application/zip`
+- `format=png&pngMode=single` -> `image/png`
+
+#### curl examples
+
+```bash
+# PDF
+curl -L -X POST "https://your-domain.com/api/convert-md" \
+  -F "file=@README.md" \
+  -F "format=pdf" \
+  -o README.pdf
+
+# PNG pages (zip)
+curl -L -X POST "https://your-domain.com/api/convert-md" \
+  -F "file=@README.md" \
+  -F "format=png" \
+  -F "pngMode=pages" \
+  -o README_png_pages.zip
+
+# Single PNG
+curl -L -X POST "https://your-domain.com/api/convert-md" \
+  -F "file=@README.md" \
+  -F "format=png" \
+  -F "pngMode=single" \
+  -o README.png
+```
+
+#### Python example
+
+```python
+import requests
+
+url = "https://your-domain.com/api/convert-md"
+with open("README.md", "rb") as f:
+    files = {"file": ("README.md", f, "text/markdown")}
+    data = {"format": "pdf"}
+    response = requests.post(url, files=files, data=data, timeout=120)
+    response.raise_for_status()
+
+with open("README.pdf", "wb") as out:
+    out.write(response.content)
+```
+
+### HTTPS Note
+
+The route is standard HTTP and works over HTTPS automatically when deployed behind TLS (for example Vercel, Nginx, Cloudflare, or other reverse proxies). Use `https://` URLs in Python/curl clients in production.
 
 ## File Cleanup
 
@@ -75,7 +137,9 @@ Uploaded files are stored in `tmp_uploads/<sessionId>/`. The server runs a cron 
 │       ├── upload/route.ts
 │       ├── list-files/route.ts
 │       ├── file-content/route.ts
-│       └── export-pdf/route.ts
+│       ├── export-pdf/route.ts
+│       ├── export-png-pages/route.ts
+│       └── convert-md/route.ts
 ├── components/
 │   ├── UploadZone.tsx        # Drag-and-drop folder upload
 │   ├── TabBar.tsx            # Multi-tab navigation
