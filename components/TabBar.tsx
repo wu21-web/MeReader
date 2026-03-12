@@ -10,8 +10,10 @@ interface Tab {
 interface TabBarProps {
   tabs: Tab[];
   activeId: string;
+  batchSidebarOpen: boolean;
   onSelect: (id: string) => void;
   onClose: (id: string) => void;
+  onToggleBatchSidebar: () => void;
   onAddFolder: () => void;
   onAddFile: () => void;
 }
@@ -19,8 +21,10 @@ interface TabBarProps {
 export default function TabBar({
   tabs,
   activeId,
+  batchSidebarOpen,
   onSelect,
   onClose,
+  onToggleBatchSidebar,
   onAddFolder,
   onAddFile,
 }: TabBarProps) {
@@ -65,7 +69,34 @@ export default function TabBar({
         })}
       </div>
 
-      <div className="relative shrink-0 border-l border-gray-200 dark:border-gray-700">
+      <div className="flex items-center shrink-0 border-l border-gray-200 dark:border-gray-700 pr-1">
+        <button
+          type="button"
+          aria-label={batchSidebarOpen ? "Hide batch sidebar" : "Show batch sidebar"}
+          title={batchSidebarOpen ? "Hide batch sidebar" : "Show batch sidebar"}
+          onClick={onToggleBatchSidebar}
+          className={`m-1 w-8 h-8 flex items-center justify-center rounded border transition-colors ${
+            batchSidebarOpen
+              ? "border-blue-500 text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30"
+              : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+          }`}
+        >
+          <svg
+            className="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
+
+        <div className="relative">
         <button
           type="button"
           aria-label="Add markdown tab"
@@ -89,7 +120,7 @@ export default function TabBar({
         </button>
 
         {showAddMenu && (
-          <div className="absolute right-1 top-11 z-20 w-44 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-1">
+          <div className="absolute right-0 top-11 z-20 w-44 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-1">
             <button
               type="button"
               onClick={() => {
@@ -112,6 +143,7 @@ export default function TabBar({
             </button>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

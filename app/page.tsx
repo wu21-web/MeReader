@@ -630,29 +630,7 @@ export default function Home() {
         </main>
       ) : (
         /* Tab + preview screen */
-        <div className="flex flex-1 overflow-hidden relative">
-          {!batchSidebarOpen && (
-            <button
-              type="button"
-              onClick={() => setBatchSidebarOpen(true)}
-              className="absolute left-3 top-3 z-20 inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white/95 dark:bg-gray-800/95 backdrop-blur px-3 py-2 text-sm font-medium text-gray-800 dark:text-gray-100 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <svg
-                className="w-4 h-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-              Batch Process
-            </button>
-          )}
+        <div className="flex flex-1 overflow-hidden">
 
           {batchSidebarOpen && (
             <aside
@@ -770,8 +748,10 @@ export default function Home() {
             <TabBar
               tabs={tabs}
               activeId={activeId}
+              batchSidebarOpen={batchSidebarOpen}
               onSelect={setActiveId}
               onClose={closeTab}
+              onToggleBatchSidebar={() => setBatchSidebarOpen((prev) => !prev)}
               onAddFolder={() => addFolderInputRef.current?.click()}
               onAddFile={() => addFileInputRef.current?.click()}
             />
