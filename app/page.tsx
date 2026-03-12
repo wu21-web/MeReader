@@ -32,7 +32,9 @@ export default function Home() {
   const [batchSidebarWidth, setBatchSidebarWidth] = useState(288);
   const [resizingBatchSidebar, setResizingBatchSidebar] = useState(false);
   const [batchSelection, setBatchSelection] = useState<Set<string>>(new Set());
-  const [exporting, setExporting] = useState(false);
+  const [exportAction, setExportAction] = useState<
+    "idle" | "pdf" | "png" | "batch-pdf" | "batch-png"
+  >("idle");
   const [exportError, setExportError] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -269,14 +271,14 @@ export default function Home() {
 
   const handleExportPdf = async () => {
     if (!activeTab || !previewRef.current) return;
-    setExporting(true);
+    setExportAction("pdf");
     setExportError(null);
     try {
       await exportTabToPdf(activeTab);
     } catch (err) {
       setExportError(String(err));
     } finally {
-      setExporting(false);
+      setExportAction("idle");
     }
   };
 
@@ -344,21 +346,21 @@ export default function Home() {
 
   const handleExportPngPages = async () => {
     if (!activeTab || !previewRef.current) return;
-    setExporting(true);
+    setExportAction("png");
     setExportError(null);
     try {
       await exportTabToPngPages(activeTab);
     } catch (err) {
       setExportError(String(err));
     } finally {
-      setExporting(false);
+      setExportAction("idle");
     }
   };
 
   const handleBatchExportPdf = useCallback(async () => {
     if (selectedMarkdownTabs.length === 0) return;
 
-    setExporting(true);
+    setExportAction("batch-pdf");
     setExportError(null);
 
     const prevActiveId = activeId;
@@ -375,14 +377,14 @@ export default function Home() {
       if (prevActiveId) {
         setActiveId(prevActiveId);
       }
-      setExporting(false);
+      setExportAction("idle");
     }
   }, [activeId, exportTabToPdf, selectedMarkdownTabs, waitForPreviewPaint]);
 
   const handleBatchExportPngPages = useCallback(async () => {
     if (selectedMarkdownTabs.length === 0) return;
 
-    setExporting(true);
+    setExportAction("batch-png");
     setExportError(null);
 
     const prevActiveId = activeId;
@@ -399,7 +401,7 @@ export default function Home() {
       if (prevActiveId) {
         setActiveId(prevActiveId);
       }
-      setExporting(false);
+      setExportAction("idle");
     }
   }, [activeId, exportTabToPngPages, selectedMarkdownTabs, waitForPreviewPaint]);
 
@@ -525,10 +527,10 @@ export default function Home() {
             <>
               <button
                 onClick={handleExportPdf}
-                disabled={!activeTab || exporting}
+                disabled={!activeTab || exportAction !== "idle"}
                 className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded transition-colors"
               >
-                {exporting ? (
+                {exportAction === "pdf" ? (
                   <>
                     <svg
                       className="w-4 h-4 animate-spin"
@@ -549,7 +551,7 @@ export default function Home() {
                         d="M4 12a8 8 0 018-8v8H4z"
                       />
                     </svg>
-                    Exporting…
+                    Exporting PDF...
                   </>
                 ) : (
                   <>
@@ -572,10 +574,10 @@ export default function Home() {
               </button>
               <button
                 onClick={handleExportPngPages}
-                disabled={!activeTab || exporting}
+                disabled={!activeTab || exportAction !== "idle"}
                 className="flex items-center gap-1 px-3 py-1.5 text-sm bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded transition-colors"
               >
-                Export PNG Pages
+                {exportAction === "png" ? "Exporting PNG..." : "Export PNG Pages"}
               </button>
               <button
                 onClick={() => {
@@ -710,23 +712,23 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={handleBatchExportPdf}
-                    disabled={selectedMarkdownTabs.length === 0 || exporting}
+                    disabled={selectedMarkdownTabs.length === 0 || exportAction !== "idle"}
                     className="w-full px-3 py-2 text-sm rounded bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400"
                   >
-                    {exporting ? "Exporting..." : "Export Selected PDFs"}
+                    {exportAction === "batch-pdf" ? "Exporting PDFs..." : "Export Selected PDFs"}
                   </button>
                   <button
                     type="button"
                     onClick={handleBatchExportPngPages}
-                    disabled={selectedMarkdownTabs.length === 0 || exporting}
+                    disabled={selectedMarkdownTabs.length === 0 || exportAction !== "idle"}
                     className="w-full px-3 py-2 text-sm rounded bg-emerald-600 hover:bg-emerald-700 text-white disabled:bg-emerald-400"
                   >
-                    {exporting ? "Exporting..." : "Export Selected PNG Pages"}
+                    {exportAction === "batch-png" ? "Exporting PNGs..." : "Export Selected PNG Pages"}
                   </button>
                   <button
                     type="button"
                     onClick={handleBatchClose}
-                    disabled={selectedMarkdownTabs.length === 0 || exporting}
+                    disabled={selectedMarkdownTabs.length === 0 || exportAction !== "idle"}
                     className="w-full px-3 py-2 text-sm rounded bg-gray-600 hover:bg-gray-500 text-white disabled:bg-gray-400"
                   >
                     Close Selected
