@@ -1,0 +1,36 @@
+name: Update Project Structure
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  update-structure:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install tree command
+        run: sudo apt-get update && sudo apt-get install -y tree
+
+      - name: Generate project structure
+        run: |
+          tree -I '__pycache__|*.pyc|.git|.venv|node_modules|.DS_Store' > project-tree.txt
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add project-tree.txt
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update project structure [skip ci]"
+            git push
+          fi
