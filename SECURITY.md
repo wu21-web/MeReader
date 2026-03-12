@@ -13,7 +13,7 @@ We actively provide security updates for the following versions of **MeReader**:
 
 This application is designed with **Privacy by Design** principles:
 
-- **Ephemeral Storage:** All uploaded files are stored in a volatile `/tmp` directory.
+- **Ephemeral Storage:** All uploaded files are stored in the `tmp_uploads/` directory.
 - **Auto-Deletion:** Files are strictly purged **24 hours** after upload via an automated cleanup task.
 - **No Persistent Database:** We do not index or store the content of your READMEs in a permanent database.
 
@@ -34,7 +34,7 @@ We are particularly interested in reports related to:
 
 - **XSS (Cross-Site Scripting):** Bypassing the Markdown sanitizer to execute arbitrary JS.
 - **SSRF (Server-Side Request Forgery):** Using the PDF exporter to access internal network resources.
-- **Path Traversal:** Accessing files outside the designated `/tmp` directory.
+- **Path Traversal:** Accessing files outside the designated `tmp_uploads/` directory.
 
 ## Response Process
 
