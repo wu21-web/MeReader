@@ -1,4 +1,3 @@
----
 # Security Policy
 
 ## Supported Versions
@@ -7,16 +6,16 @@ We actively provide security updates for the following versions of **MeReader**:
 
 | Version | Supported |
 | --- | --- |
-| 1.0.x | ✅: |
-| < 1.0 | :x: |
+| 1.0.x | ✅ |
+| < 1.0 | ❌ |
 
 ## Our Commitment to Privacy
 
 This application is designed with **Privacy by Design** principles:
 
-* **Ephemeral Storage:** All uploaded files are stored in a volatile `/tmp` directory.
-* **Auto-Deletion:** Files are strictly purged **24 hours** after upload via an automated cleanup task.
-* **No Persistent Database:** We do not index or store the content of your READMEs in a permanent database.
+- **Ephemeral Storage:** All uploaded files are stored in a volatile `/tmp` directory.
+- **Auto-Deletion:** Files are strictly purged **24 hours** after upload via an automated cleanup task.
+- **No Persistent Database:** We do not index or store the content of your READMEs in a permanent database.
 
 ## Reporting a Vulnerability
 
@@ -26,15 +25,16 @@ If you discover a potential security flaw (e.g., Remote Code Execution in the PD
 
 1. **Email us:** Send a detailed report to **wu2196674@gmail.com**.
 2. **Include Details:** Provide a summary of the vulnerability, steps to reproduce, and a proof-of-concept (if applicable).
-3. **Wait for Response:** You will receive an acknowledgment within **[48/72] hours**.
-4. **Colaboration:** We can add you as a colaborator if you have enough ability to maintain this repository after evaluting your email.
+3. **Wait for Response:** You will receive an acknowledgment within **48–72 hours**.
+4. **Collaboration:** We can add you as a collaborator if you have enough ability to maintain this repository after evaluating your email.
+
 ### Scope
 
 We are particularly interested in reports related to:
 
-* **XSS (Cross-Site Scripting):** Bypassing the Markdown sanitizer to execute arbitrary JS.
-* **SSRF (Server-Side Request Forgery):** Using the PDF exporter to access internal network resources.
-* **Path Traversal:** Accessing files outside the designated `/tmp` directory.
+- **XSS (Cross-Site Scripting):** Bypassing the Markdown sanitizer to execute arbitrary JS.
+- **SSRF (Server-Side Request Forgery):** Using the PDF exporter to access internal network resources.
+- **Path Traversal:** Accessing files outside the designated `/tmp` directory.
 
 ## Response Process
 
@@ -46,8 +46,6 @@ After a report is received:
 
 ## Non-Qualifying Vulnerabilities
 
-* Social engineering attacks against maintainers.
-* Denial of Service (DoS) attacks that do not involve a specific software bug.
-* Issues related to outdated browser versions.
-
----
+- Social engineering attacks against maintainers.
+- Denial of Service (DoS) attacks that do not involve a specific software bug.
+- Issues related to outdated browser versions.
