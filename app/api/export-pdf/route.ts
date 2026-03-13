@@ -55,6 +55,9 @@ export async function POST(req: NextRequest) {
 
       const page = await browser.newPage();
       await page.setContent(fullHtml, { waitUntil: "networkidle0" });
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+      });
 
       const pdfBuffer = await page.pdf({
         format: "A4",
@@ -99,9 +102,10 @@ function buildHtmlPage(bodyHtml: string, title: string): string {
   <meta charset="UTF-8" />
   <title>${escapeHtml(title)}</title>
   <style>
+    @import url("https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&family=Noto+Sans:wght@400;600;700&family=Noto+Sans+JP:wght@400;600;700&family=Noto+Sans+KR:wght@400;600;700&family=Noto+Sans+SC:wght@400;600;700&display=swap");
     *, *::before, *::after { box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      font-family: "Noto Sans", "Noto Sans SC", "Noto Sans JP", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
       font-size: 16px;
       line-height: 1.5;
       color: #24292f;
