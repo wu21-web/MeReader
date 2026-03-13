@@ -28,9 +28,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add project-tree.txt
+          git diff --staged project-tree.txt
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
+            echo "Changes detected in project-tree.txt"
             git commit -m "chore: update project structure [skip ci]"
             git push
           fi
