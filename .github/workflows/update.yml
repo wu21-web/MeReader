@@ -1,19 +1,21 @@
 name: Update Project Structure
 
 on:
-  workflow_dispatch: #Manual
+  push:
+    branches: ["main"]
+  workflow_dispatch: 
 
 jobs:
   update-structure:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # This gives the automatic GITHUB_TOKEN permission to push
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Fetches history so git diff can compare against the previous state
 
       - name: Install tree command
         run: sudo apt-get update && sudo apt-get install -y tree
@@ -26,12 +28,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
           git add project-tree.txt
-          # Use git status to see if the file is actually different from the HEAD
-          if git diff --quiet HEAD project-tree.txt; then
-            echo "No changes to commit"
+          
+          # This checks if the tree you just generated is different from the one in the repo
+          if git diff --staged --quiet; then
+            echo "No changes to project structure. Skipping push."
           else
-            echo "Changes detected in project-tree.txt"
-            git commit -m "chore: update project structure [skip ci]"
+            echo "Changes detected! Updating project-tree.txt..."
+            git commit -m "chore: update project structure"
+            git pull --rebase origin main
             git push origin main
           fi
