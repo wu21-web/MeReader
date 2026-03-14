@@ -1,5 +1,5 @@
 /**
- * Ephemeral storage cleanup: removes uploaded session folders from /tmp/uploads
+ * Ephemeral storage cleanup: removes uploaded session folders from tmp_uploads/
  * that are older than 24 hours.
  */
 
