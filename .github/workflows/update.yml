@@ -22,7 +22,11 @@ jobs:
 
       - name: Generate project structure
         run: |
-          tree -I '__pycache__|*.pyc|.git|.venv|node_modules|.DS_Store' > project-tree.txt
+          {
+            echo "Updated by commit: ${{ github.sha }}"
+            echo ""
+            tree -I '__pycache__|*.pyc|.git|.venv|node_modules|.DS_Store'
+          } > project-tree.txt
 
       - name: Commit and push changes
         run: |
@@ -31,12 +35,11 @@ jobs:
           
           git add project-tree.txt
           
-          # This checks if the tree you just generated is different from the one in the repo
           if git diff --staged --quiet; then
             echo "No changes to project structure. Skipping push."
           else
             echo "Changes detected! Updating project-tree.txt..."
-            git commit -m "chore: update project structure"
+            git commit -m "chore: update project structure [skip ci]"
             git pull --rebase origin main
             git push origin main
           fi
