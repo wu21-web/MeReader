@@ -1,8 +1,7 @@
 name: Update Project Structure
 
 on:
-  push:
-    branches: ["main"]
+  workflow_dispatch: #Manual
 
 jobs:
   update-structure:
