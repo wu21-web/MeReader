@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { safeSessionPath } from "@/lib/cleanup";
+import { deriveExportTitle, escapeHtml } from "@/lib/exportTitle";
 
 export const runtime = "nodejs";
 // Allow up to 60 s on Vercel Pro; free tier is capped at 10 s.
@@ -27,10 +28,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Derive a clean title: strip folder prefix and .md extension
-    const exportTitle = title
-      ? title.replace(/^.*[\/]/, "").replace(/\.md(\s.*)?$/i, "") || title
-      : "MeReader Export";
+    // Derive a clean title without regex on user-controlled input.
+    const exportTitle = deriveExportTitle(title);
     const fullHtml = buildHtmlPage(html, exportTitle);
 
     try {
@@ -161,10 +160,3 @@ function buildHtmlPage(bodyHtml: string, title: string): string {
 </html>`;
 }
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
