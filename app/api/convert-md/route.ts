@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
     }
 
     const markdown = await file.text();
-    const exportTitle = sanitizeFileName(deriveExportTitle(file.name));
+    const sanitizedTitle = sanitizeFileName(deriveExportTitle(file.name));
+    const exportTitle = sanitizedTitle || "mereader_export";
 
     const htmlBody = renderMarkdownToSafeHtml(markdown);
     const fullHtml = buildHtmlPage(htmlBody, exportTitle);
