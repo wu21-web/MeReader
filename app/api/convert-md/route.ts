@@ -3,6 +3,7 @@ import JSZip from "jszip";
 import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
 import { escapeHtml } from "@/lib/exportTitle";
+import { deriveExportTitle, escapeHtml, sanitizeFileName } from "@/lib/exportTitle";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -49,9 +50,8 @@ export async function POST(req: NextRequest) {
     }
 
     const markdown = await file.text();
-    const exportTitle = sanitizeFileName(
-      file.name.replace(/\.md$/i, "") || "MeReader Export"
-    );
+    const sanitizedTitle = sanitizeFileName(deriveExportTitle(file.name));
+    const exportTitle = sanitizedTitle || "mereader_export";
 
     const htmlBody = renderMarkdownToSafeHtml(markdown);
     const fullHtml = buildHtmlPage(htmlBody, exportTitle);
@@ -345,6 +345,3 @@ function corsHeaders(): Record<string, string> {
 }
 
 
-function sanitizeFileName(input: string): string {
-  return input.replace(/[\\/:*?"<>|]+/g, "_").trim() || "mereader_export";
-}

@@ -11,7 +11,8 @@ export function deriveExportTitle(title?: string): string {
   const lastSlash = Math.max(title.lastIndexOf("/"), title.lastIndexOf("\\"));
   const fileName = lastSlash >= 0 ? title.slice(lastSlash + 1) : title;
 
-  // Keep old behavior: remove trailing ".md" or ".md" followed by whitespace suffix.
+  // Keep old behavior for ".md" handling: remove trailing ".md" or ".md" followed by whitespace suffix.
+  // Note: Path separator handling above was intentionally expanded to also strip Windows-style "\".
   const lower = fileName.toLowerCase();
   const mdIndex = lower.lastIndexOf(".md");
   if (mdIndex === -1) {
@@ -42,6 +43,7 @@ export function escapeHtml(str: string): string {
  * Sanitizes a string for safe use as a file name.
  * Replaces characters forbidden in Windows/Linux file systems with underscores.
  */
-export function sanitizeFileName(input: string): string {
-  return input.replace(/[\\/:*?"<>|]+/g, "_").trim();
+export function sanitizeFileName(input: string, fallback: string = "download"): string {
+  const sanitized = input.replace(/[\\/:*?"<>|]+/g, "_").trim();
+  return sanitized === "" ? fallback : sanitized;
 }
