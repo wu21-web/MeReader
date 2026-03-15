@@ -43,6 +43,7 @@ export function escapeHtml(str: string): string {
  * Sanitizes a string for safe use as a file name.
  * Replaces characters forbidden in Windows/Linux file systems with underscores.
  */
-export function sanitizeFileName(input: string): string {
-  return input.replace(/[\\/:*?"<>|]+/g, "_").trim();
+export function sanitizeFileName(input: string, fallback: string = "download"): string {
+  const sanitized = input.replace(/[\\/:*?"<>|]+/g, "_").trim();
+  return sanitized === "" ? fallback : sanitized;
 }
