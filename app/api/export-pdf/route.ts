@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { safeSessionPath } from "@/lib/cleanup";
+import { deriveExportTitle, escapeHtml } from "@/lib/exportTitle";
 
 export const runtime = "nodejs";
 // Allow up to 60 s on Vercel Pro; free tier is capped at 10 s.
@@ -159,34 +160,3 @@ function buildHtmlPage(bodyHtml: string, title: string): string {
 </html>`;
 }
 
-function deriveExportTitle(title?: string): string {
-  if (!title) {
-    return "MeReader Export";
-  }
-
-  const lastSlash = Math.max(title.lastIndexOf("/"), title.lastIndexOf("\\"));
-  const fileName = lastSlash >= 0 ? title.slice(lastSlash + 1) : title;
-
-  // Keep old behavior: remove trailing ".md" or ".md" followed by whitespace suffix.
-  const lower = fileName.toLowerCase();
-  const mdIndex = lower.lastIndexOf(".md");
-  if (mdIndex === -1) {
-    return fileName || title;
-  }
-
-  const suffix = fileName.slice(mdIndex + 3);
-  if (suffix.length === 0 || suffix[0].trim() === "") {
-    const stripped = fileName.slice(0, mdIndex);
-    return stripped || title;
-  }
-
-  return fileName || title;
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}

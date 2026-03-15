@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import JSZip from "jszip";
 import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
+import { escapeHtml } from "@/lib/exportTitle";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -343,13 +344,6 @@ function corsHeaders(): Record<string, string> {
   };
 }
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;");
-}
 
 function sanitizeFileName(input: string): string {
   return input.replace(/[\\/:*?"<>|]+/g, "_").trim() || "mereader_export";
