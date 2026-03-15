@@ -190,4 +190,3 @@ function buildHtmlPage(bodyHtml: string, title: string): string {
 </html>`;
 }
 
-
