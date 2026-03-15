@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import JSZip from "jszip";
 import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
-import { escapeHtml } from "@/lib/exportTitle";
 import { deriveExportTitle, escapeHtml, sanitizeFileName } from "@/lib/exportTitle";
 
 export const runtime = "nodejs";
