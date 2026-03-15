@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import JSZip from "jszip";
 import { safeSessionPath } from "@/lib/cleanup";
+import { deriveExportTitle, escapeHtml, sanitizeFileName } from "@/lib/exportTitle";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -29,9 +30,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const exportTitle = title
-      ? title.replace(/^.*[\/]/, "").replace(/\.md(\s.*)?$/i, "") || title
-      : "MeReader Export";
+    const exportTitle = deriveExportTitle(title);
 
     const fullHtml = buildHtmlPage(html, exportTitle);
 
@@ -191,14 +190,4 @@ function buildHtmlPage(bodyHtml: string, title: string): string {
 </html>`;
 }
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
-function sanitizeFileName(input: string): string {
-  return input.replace(/[\\/:*?"<>|]+/g, "_").trim();
-}
