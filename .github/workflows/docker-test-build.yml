@@ -1,0 +1,47 @@
+name: CI / Test, Build, and Docker
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+      #Maybe we skip the linting as it is included in other workflows? @10131107
+      - name: Lint
+        if: ${{ false }}
+        run: npm run lint
+
+      # Buildx is required to use GitHub Actions cache for Docker layers
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 3. Build the Docker Image
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false # Set to true only if you configure a registry login step later
+          tags: mereader-app:test
+          # Utilize GitHub Actions cache to speed up dependency installation
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
