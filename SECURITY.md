@@ -2,6 +2,7 @@
 
 ## Supported Versions
 **NOTICE THAT MEREADER ON VERCEL IS NOT STABLE. TO CONTRIBUTE, YOU SHOULD CLONE AND RUN A DEV SERVER ON A LOCAL MACHINE.**
+
 We actively provide security updates for the following versions of **MeReader**:
 
 | Version | Supported |
