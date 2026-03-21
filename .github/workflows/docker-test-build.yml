@@ -24,10 +24,6 @@ jobs:
           node-version: 20
           cache: npm
 
-      #Maybe we skip the linting as it is included in other workflows? @10131107
-      - name: Lint
-        if: ${{ false }}
-        run: npm run lint
 
       # Buildx is required to use GitHub Actions cache for Docker layers
       - name: Set up Docker Buildx
