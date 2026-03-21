@@ -17,7 +17,7 @@ Upload a local folder of `.md` files and preview them instantly with 1:1 GitHub 
 - **shields.io badges** render correctly via HTML passthrough
 - **Export to PDF** — headless-browser PDF via [Playwright](https://playwright.dev/) preserving all CSS styles
 - **API Cross-platform Support** unlimited api calls to converting .md files
-- **Ephemeral Storage** — server-side uploads stored in `tmp_uploads/`; a cron job purges sessions older than **24 hours**
+- **Ephemeral Storage** — server-side uploads stored in `/tmp/`; a cron job purges sessions older than **24 hours**
 - **Privacy** — client-side-only mode: files are read directly in the browser and never uploaded unless you call the upload API
 
 ## Tech Stack
@@ -125,7 +125,7 @@ The route is standard HTTP and works over HTTPS automatically when deployed behi
 
 ## File Cleanup
 
-Uploaded files are stored in `tmp_uploads/<sessionId>/`. The server runs a cron job every hour that deletes any session directory whose `.meta` timestamp is older than 24 hours.
+Uploaded files are stored in `/tmp/<sessionId>/`. The server runs a cron job every hour that deletes any session directory whose `.meta` timestamp is older than 24 hours.
 
 ## Project Structure
 See the tree.txt for update versions of the project structure.
