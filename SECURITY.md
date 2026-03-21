@@ -7,8 +7,8 @@ We actively provide security updates for the following versions of **MeReader**:
 
 | Version | Supported |
 | --- | --- |
-| 1.0.x | ✅ |
-| < 1.0 | ❌ |
+| Latest Stable Release | ✅ |
+| Pre-Releases and Older Releases | ❌ |
 
 ## Our Commitment to Privacy
 
