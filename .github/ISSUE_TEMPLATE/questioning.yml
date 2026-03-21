@@ -1,0 +1,27 @@
+name: Questioning
+description: General questioning and clarification requests.
+title: "[Questioning]: "
+labels:
+  - question
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for open-ended questions, clarifications, or uncertainty about behavior.
+
+        Pothole reporting should be mailed to the maintainer: wu2196674@gmail.com.
+        For any possible security issue, follow SECURITY.md and do not disclose details in public issues.
+  - type: textarea
+    id: topic
+    attributes:
+      label: Topic
+      placeholder: What are you questioning?
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      placeholder: Add context, expectations, and examples.
+    validations:
+      required: false

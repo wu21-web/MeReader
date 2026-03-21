@@ -1,0 +1,28 @@
+name: Question
+description: Ask for help using MeReader.
+title: "[Question]: "
+labels:
+  - question
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask your usage or setup question here.
+
+        If your question includes a pothole report, mail the maintainer directly: wu2196674@gmail.com.
+        For security concerns, do not post publicly. Follow SECURITY.md.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      placeholder: What do you need help with?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Share what you already tried and relevant logs/screenshots.
+      placeholder: I tried ... and got ...
+    validations:
+      required: false
