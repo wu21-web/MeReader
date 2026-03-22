@@ -1,4 +1,5 @@
 .
+├── Dockerfile
 ├── LICENSE
 ├── README.md
 ├── SECURITY.md
@@ -30,6 +31,7 @@
 │   ├── cleanup.ts
 │   ├── cronCleanup.ts
 │   └── exportTitle.ts
+├── next-env.d.ts
 ├── next.config.ts
 ├── node_modules
 │   ├── @alloc
@@ -30581,6 +30583,9 @@
 │   ├── next.svg
 │   ├── vercel.svg
 │   └── window.svg
+├── tmp_uploads
+│   └── 0046e694-3c3a-4bd3-96c5-b1ac851ba281
+│       └── README.md
 └── tsconfig.json
 
-2728 directories, 27856 files
+2730 directories, 27859 files
