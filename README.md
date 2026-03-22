@@ -128,25 +128,4 @@ The route is standard HTTP and works over HTTPS automatically when deployed behi
 Uploaded files are stored in `/tmp/<sessionId>/`. The server runs a cron job every hour that deletes any session directory whose `.meta` timestamp is older than 24 hours.
 
 ## Project Structure
-See the tree.txt for update versions of the project structure.
-```
-├── app/
-│   ├── page.tsx              # Main SPA (upload zone + tab viewer)
-│   ├── layout.tsx
-│   ├── globals.css           # GitHub Primer-inspired markdown styles
-│   └── api/
-│       ├── upload/route.ts
-│       ├── list-files/route.ts
-│       ├── file-content/route.ts
-│       ├── export-pdf/route.ts
-│       ├── export-png-pages/route.ts
-│       └── convert-md/route.ts
-├── components/
-│   ├── UploadZone.tsx        # Drag-and-drop folder upload
-│   ├── TabBar.tsx            # Multi-tab navigation
-│   └── MarkdownPreview.tsx   # GFM renderer
-├── lib/
-│   ├── cleanup.ts            # Session path helpers + 24-h purge logic
-│   └── cronCleanup.ts        # Cron scheduler
-└── instrumentation.ts        # Next.js server startup hook (starts cron)
-```
+__See the tree.txt for update versions of the project structure.__
