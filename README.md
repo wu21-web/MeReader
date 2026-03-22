@@ -118,7 +118,64 @@ with open("README.md", "rb") as f:
 with open("README.pdf", "wb") as out:
     out.write(response.content)
 ```
+#### HTML Example
 
+There is a renderer component in MarkdownPreview.tsx. Below is an example.
+```
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live MD Renderer</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      background: #f6f8fa;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    #preview {
+      max-width: 900px;
+      margin: 32px auto;
+      padding: 24px 28px;
+      background: #ffffff;
+      border: 1px solid #d0d7de;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div id="preview">Loading rendered.md...</div>
+
+  <script>
+    const preview = document.getElementById("preview");
+    let lastText = "";
+
+    async function renderMarkdown() {
+      try {
+        const response = await fetch("/rendered.md?t=" + Date.now(), { cache: "no-store" });
+        if (!response.ok) throw new Error("Cannot load rendered.md");
+
+        const markdown = await response.text();
+        if (markdown !== lastText) {
+          preview.innerHTML = marked.parse(markdown);
+          lastText = markdown;
+        }
+      } catch (error) {
+        preview.textContent = "Error: " + error.message;
+      }
+    }
+
+    renderMarkdown();
+    setInterval(renderMarkdown, 1000);
+  </script>
+</body>
+</html>
+```
 ### HTTPS Note
 
 The route is standard HTTP and works over HTTPS automatically when deployed behind TLS (for example Vercel, Nginx, Cloudflare, or other reverse proxies). Use `https://` URLs in Python/curl clients in production.
