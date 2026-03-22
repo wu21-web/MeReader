@@ -1,12 +1,12 @@
 /**
- * Ephemeral storage cleanup: removes uploaded session folders from tmp_uploads/
+ * Ephemeral storage cleanup: removes uploaded session folders from /tmp
  * that are older than 24 hours.
  */
 
 import fs from "fs";
 import path from "path";
 
-export const UPLOAD_DIR = path.join(process.cwd(), "tmp_uploads");
+export const UPLOAD_DIR = "/tmp";
 const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export function ensureUploadDir(): void {

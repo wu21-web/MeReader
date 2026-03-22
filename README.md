@@ -17,7 +17,7 @@ Upload a local folder of `.md` files and preview them instantly with 1:1 GitHub 
 - **shields.io badges** render correctly via HTML passthrough
 - **Export to PDF** — headless-browser PDF via [Playwright](https://playwright.dev/) preserving all CSS styles
 - **API Cross-platform Support** unlimited api calls to converting .md files
-- **Ephemeral Storage** — server-side uploads stored in `tmp_uploads/`; a cron job purges sessions older than **24 hours**
+- **Ephemeral Storage** — server-side uploads stored in `/tmp/`; a cron job purges sessions older than **24 hours**
 - **Privacy** — client-side-only mode: files are read directly in the browser and never uploaded unless you call the upload API
 
 ## Tech Stack
@@ -125,28 +125,7 @@ The route is standard HTTP and works over HTTPS automatically when deployed behi
 
 ## File Cleanup
 
-Uploaded files are stored in `tmp_uploads/<sessionId>/`. The server runs a cron job every hour that deletes any session directory whose `.meta` timestamp is older than 24 hours.
+Uploaded files are stored in `/tmp/<sessionId>/`. The server runs a cron job every hour that deletes any session directory whose `.meta` timestamp is older than 24 hours.
 
 ## Project Structure
-See the tree.txt for update versions of the project structure.
-```
-├── app/
-│   ├── page.tsx              # Main SPA (upload zone + tab viewer)
-│   ├── layout.tsx
-│   ├── globals.css           # GitHub Primer-inspired markdown styles
-│   └── api/
-│       ├── upload/route.ts
-│       ├── list-files/route.ts
-│       ├── file-content/route.ts
-│       ├── export-pdf/route.ts
-│       ├── export-png-pages/route.ts
-│       └── convert-md/route.ts
-├── components/
-│   ├── UploadZone.tsx        # Drag-and-drop folder upload
-│   ├── TabBar.tsx            # Multi-tab navigation
-│   └── MarkdownPreview.tsx   # GFM renderer
-├── lib/
-│   ├── cleanup.ts            # Session path helpers + 24-h purge logic
-│   └── cronCleanup.ts        # Cron scheduler
-└── instrumentation.ts        # Next.js server startup hook (starts cron)
-```
+__See the tree.txt for update versions of the project structure.__
