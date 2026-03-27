@@ -38,35 +38,42 @@ export async function POST(req: NextRequest) {
     try {
       const browser = await launchChromiumBrowser(PDF_VIEWPORT);
 
-      const page = await browser.newPage();
-      await page.setContent(fullHtml, { waitUntil: "networkidle0" });
-      await page.evaluate(async () => {
-        await document.fonts.ready;
-      });
+      try {
+        const page = await browser.newPage();
+        await page.setContent(fullHtml, { waitUntil: "networkidle0" });
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
 
-      const pdfBuffer = await page.pdf({
-        format: "A4",
-        printBackground: true,
-        margin: { top: "20mm", bottom: "20mm", left: "20mm", right: "20mm" },
-      });
+        const pdfBuffer = await page.pdf({
+          format: "A4",
+          printBackground: true,
+          margin: {
+            top: "20mm",
+            bottom: "20mm",
+            left: "20mm",
+            right: "20mm",
+          },
+        });
 
-      await browser.close();
+        // Buffer.from copies into a Node.js Buffer backed by a plain ArrayBuffer,
+        // which Blob / NextResponse accept as BodyInit without type errors.
+        const pdfBlob = new Blob([Buffer.from(pdfBuffer)], {
+          type: "application/pdf",
+        });
 
-      // Buffer.from copies into a Node.js Buffer backed by a plain ArrayBuffer,
-      // which Blob / NextResponse accept as BodyInit without type errors.
-      const pdfBlob = new Blob([Buffer.from(pdfBuffer)], {
-        type: "application/pdf",
-      });
-
-      return new NextResponse(pdfBlob, {
-        status: 200,
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="${encodeURIComponent(
-            exportTitle
-          )}.pdf"`,
-        },
-      });
+        return new NextResponse(pdfBlob, {
+          status: 200,
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename="${encodeURIComponent(
+              exportTitle
+            )}.pdf"`,
+          },
+        });
+      } finally {
+        await browser.close();
+      }
     } catch (err) {
       console.error("Chromium/puppeteer error:", err);
       return NextResponse.json(
