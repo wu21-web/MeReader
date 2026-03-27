@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import JSZip from "jszip";
 import { safeSessionPath } from "@/lib/cleanup";
 import { deriveExportTitle, escapeHtml, sanitizeFileName } from "@/lib/exportTitle";
+import { launchChromiumBrowser } from "@/lib/browser";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -35,24 +36,10 @@ export async function POST(req: NextRequest) {
     const fullHtml = buildHtmlPage(html, exportTitle);
 
     try {
-      const [chromiumMod, puppeteerMod] = await Promise.all([
-        import("@sparticuz/chromium"),
-        import("puppeteer-core"),
-      ]);
-      const chromium = chromiumMod.default;
-      const puppeteer = puppeteerMod.default;
-
-      chromium.setGraphicsMode = false;
-
-      const browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: {
-          width: A4_WIDTH_PX,
-          height: A4_HEIGHT_PX,
-          deviceScaleFactor: 2,
-        },
-        executablePath: await chromium.executablePath(),
-        headless: true,
+      const browser = await launchChromiumBrowser({
+        width: A4_WIDTH_PX,
+        height: A4_HEIGHT_PX,
+        deviceScaleFactor: 2,
       });
 
       const page = await browser.newPage();

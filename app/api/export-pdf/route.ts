@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { safeSessionPath } from "@/lib/cleanup";
 import { deriveExportTitle, escapeHtml } from "@/lib/exportTitle";
+import { launchChromiumBrowser } from "@/lib/browser";
 
 export const runtime = "nodejs";
 // Allow up to 60 s on Vercel Pro; free tier is capped at 10 s.
 export const maxDuration = 60;
+
+const PDF_VIEWPORT = { width: 1280, height: 800, deviceScaleFactor: 1 };
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,24 +36,7 @@ export async function POST(req: NextRequest) {
     const fullHtml = buildHtmlPage(html, exportTitle);
 
     try {
-      // Dynamic imports keep these large packages out of the client bundle and
-      // allow Next.js / Vercel to treat them as server-only externals.
-      const [chromiumMod, puppeteerMod] = await Promise.all([
-        import("@sparticuz/chromium"),
-        import("puppeteer-core"),
-      ]);
-      const chromium = chromiumMod.default;
-      const puppeteer = puppeteerMod.default;
-
-      // Disable GPU/graphics stack — not needed for PDF, saves resources.
-      chromium.setGraphicsMode = false;
-
-      const browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: { width: 1280, height: 800 },
-        executablePath: await chromium.executablePath(),
-        headless: true,
-      });
+      const browser = await launchChromiumBrowser(PDF_VIEWPORT);
 
       const page = await browser.newPage();
       await page.setContent(fullHtml, { waitUntil: "networkidle0" });
