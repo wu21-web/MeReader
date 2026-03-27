@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import JSZip from "jszip";
 import { safeSessionPath } from "@/lib/cleanup";
 import { deriveExportTitle, escapeHtml, sanitizeFileName } from "@/lib/exportTitle";
+import { launchChromiumBrowser } from "@/lib/browser";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -35,82 +36,70 @@ export async function POST(req: NextRequest) {
     const fullHtml = buildHtmlPage(html, exportTitle);
 
     try {
-      const [chromiumMod, puppeteerMod] = await Promise.all([
-        import("@sparticuz/chromium"),
-        import("puppeteer-core"),
-      ]);
-      const chromium = chromiumMod.default;
-      const puppeteer = puppeteerMod.default;
-
-      chromium.setGraphicsMode = false;
-
-      const browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: {
-          width: A4_WIDTH_PX,
-          height: A4_HEIGHT_PX,
-          deviceScaleFactor: 2,
-        },
-        executablePath: await chromium.executablePath(),
-        headless: true,
-      });
-
-      const page = await browser.newPage();
-      await page.setViewport({
+      const browser = await launchChromiumBrowser({
         width: A4_WIDTH_PX,
         height: A4_HEIGHT_PX,
         deviceScaleFactor: 2,
       });
-      await page.setContent(fullHtml, { waitUntil: "networkidle0" });
-      await page.evaluate(async () => {
-        await document.fonts.ready;
-      });
 
-      const totalHeight = await page.evaluate(() => {
-        return Math.max(
-          document.body.scrollHeight,
-          document.documentElement.scrollHeight
-        );
-      });
+      try {
+        const page = await browser.newPage();
+        await page.setViewport({
+          width: A4_WIDTH_PX,
+          height: A4_HEIGHT_PX,
+          deviceScaleFactor: 2,
+        });
+        await page.setContent(fullHtml, { waitUntil: "networkidle0" });
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
 
-      const pageCount = Math.max(1, Math.ceil(totalHeight / A4_HEIGHT_PX));
-      const zip = new JSZip();
-      const safeBase = sanitizeFileName(exportTitle) || "mereader";
+        const totalHeight = await page.evaluate(() => {
+          return Math.max(
+            document.body.scrollHeight,
+            document.documentElement.scrollHeight
+          );
+        });
 
-      for (let i = 0; i < pageCount; i += 1) {
-        const y = i * A4_HEIGHT_PX;
-        const clipHeight = Math.min(A4_HEIGHT_PX, totalHeight - y);
+        const pageCount = Math.max(1, Math.ceil(totalHeight / A4_HEIGHT_PX));
+        const zip = new JSZip();
+        const safeBase = sanitizeFileName(exportTitle) || "mereader";
 
-        const png = (await page.screenshot({
-          type: "png",
-          clip: {
-            x: 0,
-            y,
-            width: A4_WIDTH_PX,
-            height: Math.max(1, clipHeight),
+        for (let i = 0; i < pageCount; i += 1) {
+          const y = i * A4_HEIGHT_PX;
+          const clipHeight = Math.min(A4_HEIGHT_PX, totalHeight - y);
+
+          const png = (await page.screenshot({
+            type: "png",
+            clip: {
+              x: 0,
+              y,
+              width: A4_WIDTH_PX,
+              height: Math.max(1, clipHeight),
+            },
+            captureBeyondViewport: true,
+          })) as Buffer;
+
+          zip.file(`${safeBase}_page_${i + 1}.png`, png);
+        }
+
+        const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
+        const zipBlob = new Blob([Buffer.from(zipBuffer)], {
+          type: "application/zip",
+        });
+
+        return new NextResponse(zipBlob, {
+          status: 200,
+          headers: {
+            "Content-Type": "application/zip",
+            "Content-Disposition": `attachment; filename="${encodeURIComponent(
+              safeBase
+            )}_png_pages.zip"`,
           },
-          captureBeyondViewport: true,
-        })) as Buffer;
-
-        zip.file(`${safeBase}_page_${i + 1}.png`, png);
+        });
+      } finally {
+        await browser.close();
       }
-
-      await browser.close();
-
-      const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
-      const zipBlob = new Blob([Buffer.from(zipBuffer)], {
-        type: "application/zip",
-      });
-
-      return new NextResponse(zipBlob, {
-        status: 200,
-        headers: {
-          "Content-Type": "application/zip",
-          "Content-Disposition": `attachment; filename="${encodeURIComponent(
-            safeBase
-          )}_png_pages.zip"`,
-        },
-      });
     } catch (err) {
       console.error("Chromium/puppeteer PNG export error:", err);
       return NextResponse.json(

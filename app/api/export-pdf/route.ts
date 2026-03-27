@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { safeSessionPath } from "@/lib/cleanup";
 import { deriveExportTitle, escapeHtml } from "@/lib/exportTitle";
+import { launchChromiumBrowser } from "@/lib/browser";
 
 export const runtime = "nodejs";
 // Allow up to 60 s on Vercel Pro; free tier is capped at 10 s.
 export const maxDuration = 60;
+
+const PDF_VIEWPORT = { width: 1280, height: 800, deviceScaleFactor: 1 };
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,54 +36,44 @@ export async function POST(req: NextRequest) {
     const fullHtml = buildHtmlPage(html, exportTitle);
 
     try {
-      // Dynamic imports keep these large packages out of the client bundle and
-      // allow Next.js / Vercel to treat them as server-only externals.
-      const [chromiumMod, puppeteerMod] = await Promise.all([
-        import("@sparticuz/chromium"),
-        import("puppeteer-core"),
-      ]);
-      const chromium = chromiumMod.default;
-      const puppeteer = puppeteerMod.default;
+      const browser = await launchChromiumBrowser(PDF_VIEWPORT);
 
-      // Disable GPU/graphics stack — not needed for PDF, saves resources.
-      chromium.setGraphicsMode = false;
+      try {
+        const page = await browser.newPage();
+        await page.setContent(fullHtml, { waitUntil: "networkidle0" });
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
 
-      const browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: { width: 1280, height: 800 },
-        executablePath: await chromium.executablePath(),
-        headless: true,
-      });
+        const pdfBuffer = await page.pdf({
+          format: "A4",
+          printBackground: true,
+          margin: {
+            top: "20mm",
+            bottom: "20mm",
+            left: "20mm",
+            right: "20mm",
+          },
+        });
 
-      const page = await browser.newPage();
-      await page.setContent(fullHtml, { waitUntil: "networkidle0" });
-      await page.evaluate(async () => {
-        await document.fonts.ready;
-      });
+        // Buffer.from copies into a Node.js Buffer backed by a plain ArrayBuffer,
+        // which Blob / NextResponse accept as BodyInit without type errors.
+        const pdfBlob = new Blob([Buffer.from(pdfBuffer)], {
+          type: "application/pdf",
+        });
 
-      const pdfBuffer = await page.pdf({
-        format: "A4",
-        printBackground: true,
-        margin: { top: "20mm", bottom: "20mm", left: "20mm", right: "20mm" },
-      });
-
-      await browser.close();
-
-      // Buffer.from copies into a Node.js Buffer backed by a plain ArrayBuffer,
-      // which Blob / NextResponse accept as BodyInit without type errors.
-      const pdfBlob = new Blob([Buffer.from(pdfBuffer)], {
-        type: "application/pdf",
-      });
-
-      return new NextResponse(pdfBlob, {
-        status: 200,
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="${encodeURIComponent(
-            exportTitle
-          )}.pdf"`,
-        },
-      });
+        return new NextResponse(pdfBlob, {
+          status: 200,
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename="${encodeURIComponent(
+              exportTitle
+            )}.pdf"`,
+          },
+        });
+      } finally {
+        await browser.close();
+      }
     } catch (err) {
       console.error("Chromium/puppeteer error:", err);
       return NextResponse.json(
