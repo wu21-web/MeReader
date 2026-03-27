@@ -21,10 +21,7 @@ export async function launchChromiumBrowser(
   chromium.setGraphicsMode = false;
 
   return puppeteer.launch({
-    args: puppeteer.defaultArgs({
-      args: chromium.args,
-      headless: CHROMIUM_HEADLESS_MODE,
-    }),
+    args: chromium.args,
     defaultViewport,
     executablePath: await chromium.executablePath(chromiumBinPath()),
     headless: CHROMIUM_HEADLESS_MODE,
