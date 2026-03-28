@@ -154,12 +154,14 @@ export default function Home() {
         return;
       }
 
-      // Once confirmed, remove the beforeunload listener to prevent a double prompt.
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-
+            // Once confirmed, handle listener removal to prevent double prompts on page unload.
       if (sameDocument) {
         event.preventDefault();
+        window.removeEventListener("beforeunload", handleBeforeUnload);
         window.location.assign(destination.href);
+      } else if (destination.origin !== current.origin) {
+        // External link will cause a page unload.
+        window.removeEventListener("beforeunload", handleBeforeUnload);
       }
     };
 
