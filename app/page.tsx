@@ -154,6 +154,9 @@ export default function Home() {
         return;
       }
 
+      // Once confirmed, remove the beforeunload listener to prevent a double prompt.
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+
       if (sameDocument) {
         event.preventDefault();
         window.location.assign(destination.href);
