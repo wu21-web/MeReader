@@ -12,6 +12,8 @@ interface MarkdownTab {
   content: string;
 }
 
+const EXIT_CONFIRM_MESSAGE = "Exit? You will lose all unsaved changes.";
+
 function makeUniqueName(baseName: string, existingNames: Set<string>): string {
   if (!existingNames.has(baseName)) {
     return baseName;
@@ -46,6 +48,7 @@ export default function Home() {
   const [exportError, setExportError] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+  const hasOpenTabsRef = useRef(false);
   const batchResizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const addFolderInputRef = useRef<HTMLInputElement>(null);
   const addFileInputRef = useRef<HTMLInputElement>(null);
@@ -87,6 +90,84 @@ export default function Home() {
       setActiveId(tabs[0].id);
     }
   }, [tabs, activeId]);
+
+  useEffect(() => {
+    hasOpenTabsRef.current = tabs.length > 0;
+  }, [tabs.length]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasOpenTabsRef.current) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = EXIT_CONFIRM_MESSAGE;
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
+  useEffect(() => {
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (
+        !hasOpenTabsRef.current ||
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const anchor = target.closest("a[href]");
+      if (!(anchor instanceof HTMLAnchorElement)) {
+        return;
+      }
+
+      if (anchor.target && anchor.target !== "_self") {
+        return;
+      }
+
+      if (anchor.hasAttribute("download")) {
+        return;
+      }
+
+      const rawHref = anchor.getAttribute("href");
+      if (!rawHref || rawHref.startsWith("#")) {
+        return;
+      }
+
+      const destination = new URL(anchor.href, window.location.href);
+      const current = new URL(window.location.href);
+      const sameDocument =
+        destination.origin === current.origin &&
+        destination.pathname === current.pathname &&
+        destination.search === current.search;
+
+      if (!window.confirm(EXIT_CONFIRM_MESSAGE)) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      if (sameDocument) {
+        event.preventDefault();
+        window.location.assign(destination.href);
+      }
+    };
+
+    document.addEventListener("click", handleDocumentClick, true);
+    return () => document.removeEventListener("click", handleDocumentClick, true);
+  }, []);
 
   const handleFilesLoaded = useCallback(
     (files: { name: string; content: string }[]) => {
