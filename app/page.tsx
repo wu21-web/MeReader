@@ -95,7 +95,7 @@ export default function Home() {
     hasOpenTabsRef.current = tabs.length > 0;
   }, [tabs.length]);
 
-  useEffect(() => {
+    useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (!hasOpenTabsRef.current) {
         return;
@@ -105,11 +105,6 @@ export default function Home() {
       event.returnValue = EXIT_CONFIRM_MESSAGE;
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
-
-  useEffect(() => {
     const handleDocumentClick = (event: MouseEvent) => {
       if (
         !hasOpenTabsRef.current ||
@@ -165,8 +160,13 @@ export default function Home() {
       }
     };
 
+    window.addEventListener("beforeunload", handleBeforeUnload);
     document.addEventListener("click", handleDocumentClick, true);
-    return () => document.removeEventListener("click", handleDocumentClick, true);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("click", handleDocumentClick, true);
+    };
   }, []);
 
   const handleFilesLoaded = useCallback(
