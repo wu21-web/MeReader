@@ -20,8 +20,8 @@ function makeUniqueName(baseName: string, existingNames: Set<string>): string {
   const dirPrefix = lastSlash >= 0 ? baseName.slice(0, lastSlash + 1) : "";
   const fileName = lastSlash >= 0 ? baseName.slice(lastSlash + 1) : baseName;
   const extIndex = fileName.toLowerCase().lastIndexOf(".md");
-  const stem = extIndex >= 0 ? fileName.slice(0, extIndex) : fileName;
-  const extension = extIndex >= 0 ? fileName.slice(extIndex) : "";
+  const stem = extIndex > 0 ? fileName.slice(0, extIndex) : fileName;
+  const extension = extIndex > 0 ? fileName.slice(extIndex) : "";
 
   let count = 2;
   let candidate = `${dirPrefix}${stem} (${count})${extension}`;
