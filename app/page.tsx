@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useCallback, useRef, useEffect } from "react";
 import UploadZone from "@/components/UploadZone";
 import TabBar from "@/components/TabBar";
@@ -492,7 +493,11 @@ export default function Home() {
 
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-800">
-        <div className="flex items-center gap-2">
+        <Link
+          href="/"
+          aria-label="Go to main page"
+          className="flex items-center gap-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-gray-800"
+        >
           <svg
             className="w-6 h-6 text-white"
             viewBox="0 0 24 24"
@@ -504,7 +509,7 @@ export default function Home() {
           <span className="text-gray-400 text-sm hidden sm:inline">
             GFM Live Previewer &amp; PDF Exporter
           </span>
-        </div>
+        </Link>
 
         <div className="flex items-center gap-2">
           {/* Dark mode toggle – always visible */}
