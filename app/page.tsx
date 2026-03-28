@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useCallback, useRef, useEffect } from "react";
 import UploadZone from "@/components/UploadZone";
 import TabBar from "@/components/TabBar";
@@ -10,6 +11,8 @@ interface MarkdownTab {
   name: string;
   content: string;
 }
+
+const EXIT_CONFIRM_MESSAGE = "Exit? You will lose all unsaved changes.";
 
 function makeUniqueName(baseName: string, existingNames: Set<string>): string {
   if (!existingNames.has(baseName)) {
@@ -45,6 +48,7 @@ export default function Home() {
   const [exportError, setExportError] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+  const hasOpenTabsRef = useRef(false);
   const batchResizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const addFolderInputRef = useRef<HTMLInputElement>(null);
   const addFileInputRef = useRef<HTMLInputElement>(null);
@@ -86,6 +90,92 @@ export default function Home() {
       setActiveId(tabs[0].id);
     }
   }, [tabs, activeId]);
+
+  useEffect(() => {
+    hasOpenTabsRef.current = tabs.length > 0;
+  }, [tabs.length]);
+
+    useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasOpenTabsRef.current) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = EXIT_CONFIRM_MESSAGE;
+    };
+
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (
+        !hasOpenTabsRef.current ||
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const anchor = target.closest("a[href]");
+      if (!(anchor instanceof HTMLAnchorElement)) {
+        return;
+      }
+
+      if (anchor.target && anchor.target !== "_self") {
+        return;
+      }
+
+      if (anchor.hasAttribute("download")) {
+        return;
+      }
+
+      const rawHref = anchor.getAttribute("href");
+      if (!rawHref || rawHref.startsWith("#")) {
+        return;
+      }
+
+      const destination = new URL(anchor.href, window.location.href);
+      const current = new URL(window.location.href);
+      const sameDocument =
+        destination.origin === current.origin &&
+        destination.pathname === current.pathname &&
+        destination.search === current.search;
+
+      if (!window.confirm(EXIT_CONFIRM_MESSAGE)) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      // Once confirmed, remove the listener to prevent double prompts on page unload.
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+
+      if (sameDocument) {
+        // For same-page navigation, we must prevent the default link behavior
+        // and manually navigate to ensure our listener removal takes effect
+        // before the page unloads.
+        event.preventDefault();
+        window.location.assign(destination.href);
+      }
+      // For other links (internal client-side or external), we've removed the listener
+      // and can now let the default behavior proceed without causing a double prompt.
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("click", handleDocumentClick, true);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("click", handleDocumentClick, true);
+    };
+  }, []);
 
   const handleFilesLoaded = useCallback(
     (files: { name: string; content: string }[]) => {
@@ -492,7 +582,11 @@ export default function Home() {
 
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-800">
-        <div className="flex items-center gap-2">
+        <Link
+          href="/"
+          aria-label="Go to main page"
+          className="flex items-center gap-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-gray-800"
+        >
           <svg
             className="w-6 h-6 text-white"
             viewBox="0 0 24 24"
@@ -504,7 +598,7 @@ export default function Home() {
           <span className="text-gray-400 text-sm hidden sm:inline">
             GFM Live Previewer &amp; PDF Exporter
           </span>
-        </div>
+        </Link>
 
         <div className="flex items-center gap-2">
           {/* Dark mode toggle – always visible */}
