@@ -23,14 +23,14 @@ function makeUniqueName(baseName: string, existingNames: Set<string>): string {
   const stem = extIndex >= 0 ? fileName.slice(0, extIndex) : fileName;
   const extension = extIndex >= 0 ? fileName.slice(extIndex) : "";
 
-  let count = 2;
-  let candidate = `${dirPrefix}${stem} (${count})${extension}`;
-  while (existingNames.has(candidate)) {
-    count += 1;
-    candidate = `${dirPrefix}${stem} (${count})${extension}`;
+  for (let count = 2; ; count++) {
+    const candidate = dirPrefix + stem + " (" + count + ")" + extension;
+    if (!existingNames.has(candidate)) {
+      return candidate;
+    }
   }
-  return candidate;
 }
+
 
 export default function Home() {
   const [tabs, setTabs] = useState<MarkdownTab[]>([]);

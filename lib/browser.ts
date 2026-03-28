@@ -9,22 +9,26 @@ const LOCAL_BROWSER_PATHS: Partial<Record<NodeJS.Platform, string[]>> = {
   darwin: [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    path.join(
-      process.env.HOME ?? "~",
-      "Applications",
-      "Google Chrome.app",
-      "Contents",
-      "MacOS",
-      "Google Chrome"
-    ),
-    path.join(
-      process.env.HOME ?? "~",
-      "Applications",
-      "Chromium.app",
-      "Contents",
-      "MacOS",
-      "Chromium"
-    ),
+    ...(process.env.HOME
+      ? [
+          path.join(
+            process.env.HOME,
+            "Applications",
+            "Google Chrome.app",
+            "Contents",
+            "MacOS",
+            "Google Chrome"
+          ),
+          path.join(
+            process.env.HOME,
+            "Applications",
+            "Chromium.app",
+            "Contents",
+            "MacOS",
+            "Chromium"
+          ),
+        ]
+      : []),
   ],
   win32: [
     "C:/Program Files/Google/Chrome/Application/chrome.exe",
