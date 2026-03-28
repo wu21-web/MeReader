@@ -16,11 +16,18 @@ function makeUniqueName(baseName: string, existingNames: Set<string>): string {
     return baseName;
   }
 
+  const lastSlash = Math.max(baseName.lastIndexOf("/"), baseName.lastIndexOf("\\"));
+  const dirPrefix = lastSlash >= 0 ? baseName.slice(0, lastSlash + 1) : "";
+  const fileName = lastSlash >= 0 ? baseName.slice(lastSlash + 1) : baseName;
+  const extIndex = fileName.toLowerCase().lastIndexOf(".md");
+  const stem = extIndex >= 0 ? fileName.slice(0, extIndex) : fileName;
+  const extension = extIndex >= 0 ? fileName.slice(extIndex) : "";
+
   let count = 2;
-  let candidate = `${baseName} (${count})`;
+  let candidate = `${dirPrefix}${stem} (${count})${extension}`;
   while (existingNames.has(candidate)) {
     count += 1;
-    candidate = `${baseName} (${count})`;
+    candidate = `${dirPrefix}${stem} (${count})${extension}`;
   }
   return candidate;
 }
