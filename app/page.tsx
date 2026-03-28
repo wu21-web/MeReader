@@ -154,14 +154,14 @@ export default function Home() {
         return;
       }
 
-            // Once confirmed, handle listener removal to prevent double prompts on page unload.
-      if (sameDocument) {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+
+      // Force a full reload for same-origin navigation to clear application
+      // state, bypassing client-side routing.
+      if (destination.origin === current.origin) {
         event.preventDefault();
-        window.removeEventListener("beforeunload", handleBeforeUnload);
+        event.stopPropagation();
         window.location.assign(destination.href);
-      } else if (destination.origin !== current.origin) {
-        // External link will cause a page unload.
-        window.removeEventListener("beforeunload", handleBeforeUnload);
       }
     };
 
