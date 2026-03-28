@@ -16,14 +16,21 @@ function makeUniqueName(baseName: string, existingNames: Set<string>): string {
     return baseName;
   }
 
-  let count = 2;
-  let candidate = `${baseName} (${count})`;
-  while (existingNames.has(candidate)) {
-    count += 1;
-    candidate = `${baseName} (${count})`;
+  const lastSlash = Math.max(baseName.lastIndexOf("/"), baseName.lastIndexOf("\\"));
+  const dirPrefix = lastSlash >= 0 ? baseName.slice(0, lastSlash + 1) : "";
+  const fileName = lastSlash >= 0 ? baseName.slice(lastSlash + 1) : baseName;
+  const extIndex = fileName.lastIndexOf(".");
+  const stem = extIndex > 0 ? fileName.slice(0, extIndex) : fileName;
+  const extension = extIndex > 0 ? fileName.slice(extIndex) : "";
+
+  for (let count = 2; ; count++) {
+    const candidate = dirPrefix + stem + " (" + count + ")" + extension;
+    if (!existingNames.has(candidate)) {
+      return candidate;
+    }
   }
-  return candidate;
 }
+
 
 export default function Home() {
   const [tabs, setTabs] = useState<MarkdownTab[]>([]);
