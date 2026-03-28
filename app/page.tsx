@@ -154,15 +154,18 @@ export default function Home() {
         return;
       }
 
+      // Once confirmed, remove the listener to prevent double prompts on page unload.
       window.removeEventListener("beforeunload", handleBeforeUnload);
 
-      // Force a full reload for same-origin navigation to clear application
-      // state, bypassing client-side routing.
-      if (destination.origin === current.origin) {
+      if (sameDocument) {
+        // For same-page navigation, we must prevent the default link behavior
+        // and manually navigate to ensure our listener removal takes effect
+        // before the page unloads.
         event.preventDefault();
-        event.stopPropagation();
         window.location.assign(destination.href);
       }
+      // For other links (internal client-side or external), we've removed the listener
+      // and can now let the default behavior proceed without causing a double prompt.
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
