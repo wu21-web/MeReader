@@ -22,13 +22,13 @@ jobs:
         run: sudo apt update && sudo apt install -y tree
       
       - name: Fetch Structure
-        run: tree -L 5 -I 'node_modules|.git|dist|build|coverage|project-structure.txt' -o project-structure.txt .
+        run: tree -L 5 -I 'node_modules|.git|.gemini|dist|build|coverage|project-tree.txt' -o project-tree.txt .
 
       - name: Commit and Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add project-structure.txt
+          git add project-tree.txt
           git commit -m "Update project structure" || echo "No changes to commit"
           git push origin HEAD
       
