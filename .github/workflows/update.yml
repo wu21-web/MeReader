@@ -19,7 +19,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+        with:
+          token: ${{ secrets.ADMIN_PAT }}
+        
       - name: Install tree
         run: sudo apt update && sudo apt install -y tree
       
