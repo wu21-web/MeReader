@@ -22,7 +22,7 @@ jobs:
         run: sudo apt update && sudo apt install -y tree
       
       - name: Fetch Structure
-        run: tree . > ./project-structure.txt
+        run: tree -L 5 -I 'node_modules|.git|dist|build|coverage|project-structure.txt' -o project-structure.txt .
 
       - name: Commit and Push Changes
         run: |
