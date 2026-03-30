@@ -1,4 +1,5 @@
 .
+├── CONTRIBUTING.md
 ├── Dockerfile
 ├── LICENSE
 ├── README.md
@@ -44,4 +45,4 @@
 │   └── window.svg
 └── tsconfig.json
 
-12 directories, 33 files
+12 directories, 34 files
