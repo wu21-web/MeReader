@@ -30,6 +30,9 @@ Upload a local folder of `.md` files and preview them instantly with 1:1 GitHub 
 | PDF/PNG Rendering | `puppeteer-core` + `@sparticuz/chromium` |
 | Cleanup | `node-cron` — hourly sweep of sessions older than 24 h |
 
+## FAQs
+Q: Is this AI written code?
+A: Partly yes, AI implemented the based code (see PR #1), further functions and extension functions are human written.
 ## Getting Started
 
 ```bash
