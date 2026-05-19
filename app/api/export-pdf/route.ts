@@ -4,7 +4,6 @@ import { deriveExportTitle, escapeHtml } from "@/lib/exportTitle";
 import { launchChromiumBrowser } from "@/lib/browser";
 
 export const runtime = "nodejs";
-// Allow up to 60 s on Vercel Pro; free tier is capped at 10 s.
 export const maxDuration = 60;
 
 const PDF_VIEWPORT = { width: 1280, height: 800, deviceScaleFactor: 1 };
@@ -23,7 +22,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "html is required" }, { status: 400 });
     }
 
-    // Validate session path only when a sessionId + filePath pair is explicitly provided
     if (sessionId && filePath) {
       const resolved = safeSessionPath(sessionId, filePath);
       if (!resolved) {
@@ -31,7 +29,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Derive a clean title without regex on user-controlled input.
     const exportTitle = deriveExportTitle(title);
     const fullHtml = buildHtmlPage(html, exportTitle);
 
@@ -56,8 +53,6 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // Buffer.from copies into a Node.js Buffer backed by a plain ArrayBuffer,
-        // which Blob / NextResponse accept as BodyInit without type errors.
         const pdfBlob = new Blob([Buffer.from(pdfBuffer)], {
           type: "application/pdf",
         });

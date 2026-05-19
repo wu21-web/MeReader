@@ -42,7 +42,6 @@ const LOCAL_BROWSER_PATHS: Partial<Record<NodeJS.Platform, string[]>> = {
   ],
 };
 
-// Cache modules for warm starts in serverless environments.
 let chromiumMod: typeof SparticuzChromium | undefined;
 let puppeteerMod: typeof PuppeteerCore | undefined;
 

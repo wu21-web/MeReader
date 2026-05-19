@@ -17,7 +17,7 @@ async function collectMarkdownFiles(
   }
 
   for (const entry of entries) {
-    if (entry.name.startsWith(".")) continue; // skip hidden / meta files
+    if (entry.name.startsWith(".")) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       const nested = await collectMarkdownFiles(full, baseDir);

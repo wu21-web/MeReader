@@ -12,8 +12,6 @@ interface MarkdownPreviewProps {
   className?: string;
 }
 
-// Extend the default sanitize schema to allow class attributes (needed for
-// syntax highlighting and shields.io badge HTML), and common inline styles.
 const sanitizeSchema = {
   ...defaultSchema,
   attributes: {
@@ -78,7 +76,6 @@ export default function MarkdownPreview({
           rehypeHighlight,
         ]}
         components={{
-          // Render task list checkboxes correctly
           input({ type, checked, ...props }) {
             if (type === "checkbox") {
               return (
@@ -93,7 +90,6 @@ export default function MarkdownPreview({
             }
             return <input type={type} {...props} />;
           },
-          // Open external links in new tab safely
           a({ href, children, ...props }) {
             const isExternal =
               href?.startsWith("http://") || href?.startsWith("https://");

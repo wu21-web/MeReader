@@ -1,13 +1,8 @@
-/**
- * Ephemeral storage cleanup: removes uploaded session folders from /tmp
- * that are older than 24 hours.
- */
-
 import fs from "fs";
 import path from "path";
 
 export const UPLOAD_DIR = "/tmp";
-const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export function ensureUploadDir(): void {
   if (!fs.existsSync(UPLOAD_DIR)) {
@@ -15,9 +10,6 @@ export function ensureUploadDir(): void {
   }
 }
 
-/**
- * Removes all session directories whose creation time is older than 24 hours.
- */
 export function cleanupExpiredSessions(): void {
   ensureUploadDir();
   const now = Date.now();
@@ -35,7 +27,6 @@ export function cleanupExpiredSessions(): void {
         const meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
         uploadedAt = meta.uploadedAt ?? null;
       } catch {
-        // corrupt meta — fall back to directory mtime
       }
     }
 
@@ -53,10 +44,6 @@ export function cleanupExpiredSessions(): void {
   }
 }
 
-/**
- * Creates a new session directory, writes a .meta file with the upload timestamp,
- * and returns the session ID.
- */
 export function createSession(sessionId: string): string {
   ensureUploadDir();
   const sessionPath = path.join(UPLOAD_DIR, sessionId);
@@ -68,19 +55,14 @@ export function createSession(sessionId: string): string {
   return sessionId;
 }
 
-/**
- * Safely resolves a path within a session directory, preventing path traversal.
- */
 export function safeSessionPath(
   sessionId: string,
   relativePath: string
 ): string | null {
-  // Sanitize both components
   const sanitisedSession = path.basename(sessionId);
   const sessionDir = path.join(UPLOAD_DIR, sanitisedSession);
   const target = path.resolve(sessionDir, relativePath);
 
-  // Ensure the resolved path stays inside the session directory
   if (!target.startsWith(sessionDir + path.sep) && target !== sessionDir) {
     return null;
   }
