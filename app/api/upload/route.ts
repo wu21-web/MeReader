@@ -23,17 +23,15 @@ export async function POST(req: NextRequest) {
       const file = files[i];
       const relPath = relPaths[i] ?? file.name;
 
-      // Only handle markdown files
       if (!relPath.toLowerCase().endsWith(".md")) continue;
 
-      // Normalize relative path — strip any leading slash/dot-dot segments
       const cleanRel = relPath
         .split(/[/\\]/)
         .filter((seg) => seg !== "" && seg !== ".." && seg !== ".")
         .join(path.sep);
 
       const targetPath = safeSessionPath(sessionId, cleanRel);
-      if (!targetPath) continue; // path traversal attempt
+      if (!targetPath) continue;
 
       await mkdir(path.dirname(targetPath), { recursive: true });
       const bytes = await file.arrayBuffer();
