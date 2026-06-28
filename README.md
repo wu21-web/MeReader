@@ -1,5 +1,5 @@
 # MeReader
-
+[![CI / Test and Build](https://github.com/MacTrust/MeReader/actions/workflows/ci-test-build.yml/badge.svg)](https://github.com/MacTrust/MeReader/actions/workflows/ci-test-build.yml)
 **Multi-Tab GitHub-Flavored Markdown (GFM) Live Previewer & PDF Exporter**
 
 Upload a local folder of `.md` files and preview them instantly with 1:1 GitHub visual parity — then export any tab to a high-fidelity PDF.
