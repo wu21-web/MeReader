@@ -1,4 +1,5 @@
 # MeReader
+[![CI / Test and Build](https://github.com/MacTrust/MeReader/actions/workflows/ci-test-build.yml/badge.svg)](https://github.com/MacTrust/MeReader/actions/workflows/ci-test-build.yml)
 
 **Multi-Tab GitHub-Flavored Markdown (GFM) Live Previewer & PDF Exporter**
 
