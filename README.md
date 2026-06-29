@@ -192,5 +192,6 @@ The route is standard HTTP and works over HTTPS automatically when deployed behi
 
 Uploaded files are stored in `/tmp/<sessionId>/`. The server runs a cron job every hour that deletes any session directory whose `.meta` timestamp is older than 24 hours.
 
-## Project Structure
-See the _project_tree.txt_ for update versions of the project structure.
+<p align="center">
+  <img src="https://count.getloli.com/@mereader" alt="mereader counter" />
+</p>
