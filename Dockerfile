@@ -1,4 +1,5 @@
 FROM node:20-bookworm-slim AS base
+LABEL org.opencontainers.image.source=https://github.com/MacTrust/MeReader
 
 FROM base AS deps
 WORKDIR /app
