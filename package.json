@@ -1,7 +1,7 @@
 {
   "name": "mereader",
-  "version": "2.2",
-  "private": true,
+  "version": "2.3",
+  "private": false,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
