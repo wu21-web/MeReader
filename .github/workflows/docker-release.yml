@@ -39,4 +39,4 @@ jobs:
               with:
                   context: .
                   push: true
-                  tags: ghcr.io/wu21-web/mereader:latest
+                  tags: ghcr.io/wu21-web/mereader:2.3
