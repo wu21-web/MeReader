@@ -18,8 +18,8 @@ RUN npm prune --omit=dev
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV PORT 3000
+ENV NODE_ENV=production
+ENV PORT=3000
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libnss3 \
