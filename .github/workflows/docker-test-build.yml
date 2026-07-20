@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  actions: write
 
 jobs:
   test-and-build-docker:
@@ -24,19 +23,22 @@ jobs:
           node-version: 20
           cache: npm
 
-
-      # Buildx is required to use GitHub Actions cache for Docker layers
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 3. Build the Docker Image
+      - name: Print additional debug info
+        run: |
+            echo '=============================Docker Info============================='
+            docker info
+            echo '=============================Docker Context============================='
+            docker context show
+
       - name: Build Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
-          push: false # Set to true only if you configure a registry login step later
+          push: false
           tags: mereader-app:test
-          # Utilize GitHub Actions cache to speed up dependency installation
           cache-from: type=gha
           cache-to: type=gha,mode=max
