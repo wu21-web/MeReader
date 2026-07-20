@@ -2,10 +2,10 @@ name: Build and Release Docker Container
 
 on:
     workflow_dispatch:
-      
+
 jobs:
     build-and-release:
-        if: github.repository == 'MacTrust/MeReader'
+        if: github.repository == 'wu21-web/MeReader'
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
