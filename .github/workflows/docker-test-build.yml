@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   test-and-build-docker:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
 
     steps:
